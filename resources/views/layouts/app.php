@@ -1,5 +1,6 @@
-@include('components.head', ['title' => $title ?? 'Simple Invoice App'])
 @php
+    $businessName = \App\Models\Setting::getValue('business_name');
+    $brandName = $businessName !== '' ? $businessName : 'Invoice App';
     $request = \Zero\Lib\Http\Request::instance();
     $path = trim($request->path(), '/');
     $currentUser = \Zero\Lib\Auth\Auth::user();
@@ -19,53 +20,53 @@
         $navItems[] = ['label' => 'Admin', 'href' => route('admin.users.create'), 'pattern' => '/^admin/'];
     }
 @endphp
-<div class="min-h-screen flex bg-stone-50">
-    <aside class="hidden md:flex md:w-64 lg:w-72 flex-col bg-white border-r border-stone-200 print:hidden">
-        <div class="px-6 py-5 border-b border-stone-100">
-            <p class="text-xs uppercase tracking-widest text-stone-400">Simple</p>
-            <p class="text-2xl font-semibold text-stone-900">Invoice App</p>
-        </div>
-        <nav class="flex-1 px-4 py-6 space-y-1">
-            @foreach ($navItems as $item)
-                @php
-                    $isActive = $item['pattern'] === '/^$/' ? $path === '' : preg_match($item['pattern'], $path);
-                @endphp
-                <a href="{{ $item['href'] }}" class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium {{ $isActive ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900' }}">
-                    {{ $item['label'] }}
-                </a>
-            @endforeach
-        </nav>
-        <div class="px-6 py-4 border-t border-stone-100 text-sm text-stone-500">
-            <p>Need help? Email <span class="font-semibold text-stone-700">support@example.com</span></p>
-        </div>
-    </aside>
-    <div class="flex-1 flex flex-col">
-        <header class="bg-white border-b border-stone-200 px-4 sm:px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
-            <div>
-                <p class="text-xs uppercase tracking-widest text-stone-400">Akaunting Lite</p>
-                <h1 class="text-xl font-semibold text-stone-900">{{ $title ?? 'Simple Invoice App' }}</h1>
+@include('components.head', ['title' => $title ?? $brandName])
+<div class="min-h-screen bg-stone-50">
+    <header class="border-b border-stone-200 bg-white text-stone-900 print:hidden">
+        <div class="mx-auto flex w-full max-w-screen-2xl flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-sky-500 text-sm font-semibold text-white">
+                    {{ strtoupper(substr($brandName, 0, 1)) }}
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-stone-400">Workspace</p>
+                    <p class="text-lg font-semibold text-stone-900">{{ $brandName }}</p>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="hidden sm:inline-block text-sm text-stone-500">Today {{ date('M j, Y') }}</span>
-                @if ($currentUser)
-                    <a href="{{ route('invoices.create') }}" class="inline-flex items-center gap-2 rounded-full bg-stone-800 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800">
-                        <span>New Invoice</span>
-                    </a>
-                    <form method="POST" action="{{ route('auth.logout') }}">
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
-                            Log out
-                        </button>
-                    </form>
-                @else
-                    <a href="{{ route('auth.login.show') }}" class="inline-flex items-center gap-2 rounded-full bg-stone-800 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800">
-                        <span>Sign in</span>
-                    </a>
-                @endif
+            <div class="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+                <div class="flex items-center gap-2">
+                    @if ($currentUser)
+                        <a href="{{ route('invoices.create') }}" class="inline-flex items-center gap-2 border border-stone-200 bg-stone-900 px-4 py-2 text-sm font-semibold rounded-lg text-white shadow-sm hover:bg-stone-800">
+                            <span>New Invoice</span>
+                        </a>
+                        <form method="POST" action="{{ route('auth.logout') }}">
+                            <button type="submit" class="inline-flex items-center gap-2 border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
+                                Log out
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('auth.login.show') }}" class="inline-flex items-center gap-2 border border-stone-200 bg-stone-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-800">
+                            <span>Sign in</span>
+                        </a>
+                    @endif
+                </div>
             </div>
-        </header>
-        <main class="flex-1 px-4 py-6 sm:px-6 lg:px-10">
-            @yield('content')
-        </main>
-    </div>
+        </div>
+        <div class="border-t border-stone-100">
+            <nav class="mx-auto flex w-full max-w-screen-2xl gap-6 overflow-x-auto px-6 text-sm text-stone-500">
+                @foreach ($navItems as $item)
+                    @php
+                        $isActive = $item['pattern'] === '/^$/' ? $path === '' : preg_match($item['pattern'], $path);
+                    @endphp
+                    <a href="{{ $item['href'] }}" class="border-b-2 px-1 py-3 font-medium {{ $isActive ? 'border-stone-900 text-stone-900' : 'border-transparent hover:border-stone-300 hover:text-stone-800' }}">
+                        {{ $item['label'] }}
+                    </a>
+                @endforeach
+            </nav>
+        </div>
+    </header>
+    <main class="mx-auto w-full max-w-screen-2xl px-6 py-6">
+        @yield('content')
+    </main>
 </div>
 @include('components.footer')

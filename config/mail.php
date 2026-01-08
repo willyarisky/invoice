@@ -1,6 +1,6 @@
 <?php
 
-$encryption = env('MAIL_ENCRYPTION', 'tls');
+$encryption = \App\Models\Setting::getValue('mail_encryption');
 if (is_string($encryption)) {
     $encryption = strtolower(trim($encryption));
     if ($encryption === '' || $encryption === 'null' || $encryption === 'none') {
@@ -13,18 +13,18 @@ if ($encryption !== null && ! in_array($encryption, ['ssl', 'tls'], true)) {
 }
 
 return [
-    'default' => env('MAIL_MAILER', 'smtp'),
+    'default' => \App\Models\Setting::getValue('mail_mailer'),
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Zero Framework'),
+        'address' => \App\Models\Setting::getValue('mail_from_address'),
+        'name' => \App\Models\Setting::getValue('mail_from_name'),
     ],
 
     'smtp' => [
-        'host' => env('MAIL_HOST', '127.0.0.1'),
-        'port' => (int) env('MAIL_PORT', 587),
-        'username' => env('MAIL_USERNAME', null) ?: null,
-        'password' => env('MAIL_PASSWORD', null) ?: null,
+        'host' => \App\Models\Setting::getValue('mail_host'),
+        'port' => (int) \App\Models\Setting::getValue('mail_port'),
+        'username' => \App\Models\Setting::getValue('mail_username') ?: null,
+        'password' => \App\Models\Setting::getValue('mail_password') ?: null,
         'encryption' => $encryption, // tls, ssl, or null
         'timeout' => (int) env('MAIL_TIMEOUT', 30),
         'hello' => env('MAIL_HELO_DOMAIN', null) ?: null,

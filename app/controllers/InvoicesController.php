@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use DateTime;
 use Throwable;
+use App\Models\Setting;
 use Zero\Lib\Database;
 use Zero\Lib\DB\DBML;
 use Zero\Lib\Http\Request;
@@ -21,7 +22,7 @@ class InvoicesController
     public function index()
     {
         $invoices = DBML::table('invoices as i')
-            ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.total', 'c.name as client_name')
+            ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.currency', 'i.total', 'c.name as client_name')
             ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
             ->orderByDesc('i.date')
             ->orderByDesc('i.id')
@@ -44,6 +45,7 @@ class InvoicesController
         $invoiceDate = $this->normaliseDate((string) $request->input('date'), fallback: date('Y-m-d'));
         $dueDate = $this->normaliseDate((string) $request->input('due_date'), allowEmpty: true);
         $status = strtolower(trim((string) $request->input('status', 'draft')));
+        $currency = strtoupper(trim((string) $request->input('currency', Setting::getValue('default_currency'))));
         $items = $this->normaliseItems($request->input('items', []));
 
         if ($clientId <= 0) {
@@ -72,6 +74,10 @@ class InvoicesController
             $status = 'draft';
         }
 
+        if ($currency === '' || !preg_match('/^[A-Z]{3,4}$/', $currency)) {
+            $currency = strtoupper(trim(Setting::getValue('default_currency')));
+        }
+
         $clientExists = DBML::table('clients')->where('id', $clientId)->exists();
 
         if (!$clientExists) {
@@ -95,8 +101,8 @@ class InvoicesController
             $pdo->beginTransaction();
 
             $invoiceStmt = $pdo->prepare('
-                INSERT INTO invoices (client_id, invoice_no, date, due_date, status, total, created_at, updated_at)
-                VALUES (:client_id, :invoice_no, :date, :due_date, :status, :total, :created_at, :updated_at)
+                INSERT INTO invoices (client_id, invoice_no, date, due_date, status, currency, total, created_at, updated_at)
+                VALUES (:client_id, :invoice_no, :date, :due_date, :status, :currency, :total, :created_at, :updated_at)
             ');
 
             $invoiceStmt->execute([
@@ -105,6 +111,7 @@ class InvoicesController
                 ':date' => $invoiceDate,
                 ':due_date' => $dueDate,
                 ':status' => $status,
+                ':currency' => $currency,
                 ':total' => number_format($total, 2, '.', ''),
                 ':created_at' => $timestamp,
                 ':updated_at' => $timestamp,
@@ -157,6 +164,7 @@ class InvoicesController
                 'i.date',
                 'i.due_date',
                 'i.status',
+                'i.currency',
                 'i.total',
                 'c.name as client_name',
                 'c.email as client_email',
@@ -188,6 +196,7 @@ class InvoicesController
             'invoiceNumber' => $this->generateInvoiceNumber(),
             'today' => date('Y-m-d'),
             'statuses' => $this->allowedStatuses,
+            'defaultCurrency' => Setting::getValue('default_currency'),
             'error' => null,
             'old' => [],
         ];

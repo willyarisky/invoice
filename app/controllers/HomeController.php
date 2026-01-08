@@ -9,7 +9,7 @@ class HomeController
     public function index()
     {
         $recentInvoices = DBML::table('invoices as i')
-            ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.total', 'c.name as client_name')
+            ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.currency', 'i.total', 'c.name as client_name')
             ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
             ->orderByDesc('i.date')
             ->orderByDesc('i.id')

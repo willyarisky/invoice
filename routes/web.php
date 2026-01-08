@@ -24,7 +24,24 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::get('/invoices/{invoice}', [InvoicesController::class, 'show'])->name('invoices.show');
 
     Router::get('/clients', [ClientsController::class, 'index'])->name('clients.index');
+    Router::post('/clients', [ClientsController::class, 'store'])->name('clients.store');
     Router::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Router::post('/settings/company', [SettingsController::class, 'updateCompany'])->name('settings.company.update');
+    Router::get('/settings/currency', [SettingsController::class, 'currency'])->name('settings.currency.index');
+    Router::post('/settings/currency', [SettingsController::class, 'updateCurrency'])->name('settings.currency.update');
+    Router::post('/settings/currency/add', [SettingsController::class, 'storeCurrency'])->name('settings.currency.store');
+    Router::post('/settings/currency/{currency}/update', [SettingsController::class, 'updateCurrencyEntry'])->name('settings.currency.entry.update');
+    Router::post('/settings/currency/{currency}/delete', [SettingsController::class, 'deleteCurrency'])->name('settings.currency.delete');
+    Router::get('/settings/email', [SettingsController::class, 'email'])->name('settings.email.index');
+    Router::post('/settings/email', [SettingsController::class, 'updateEmail'])->name('settings.email.update');
+    Router::get('/settings/categories', [SettingsController::class, 'categories'])->name('settings.categories.index');
+    Router::post('/settings/categories', [SettingsController::class, 'storeCategory'])->name('settings.categories.store');
+    Router::post('/settings/categories/{category}/update', [SettingsController::class, 'updateCategory'])->name('settings.categories.update');
+    Router::post('/settings/categories/{category}/delete', [SettingsController::class, 'deleteCategory'])->name('settings.categories.delete');
+    Router::get('/settings/taxes', [SettingsController::class, 'taxes'])->name('settings.taxes.index');
+    Router::post('/settings/taxes', [SettingsController::class, 'storeTax'])->name('settings.taxes.store');
+    Router::post('/settings/taxes/{tax}/update', [SettingsController::class, 'updateTax'])->name('settings.taxes.update');
+    Router::post('/settings/taxes/{tax}/delete', [SettingsController::class, 'deleteTax'])->name('settings.taxes.delete');
 });
 
 // Guest-only authentication routes

@@ -22,13 +22,13 @@
     </div>
 
     @if (!empty($status ?? ''))
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {{ $status ?? '' }}
         </div>
     @endif
 
     @if ($errorList !== [])
-        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             <p class="font-semibold">We could not sign you in.</p>
             <ul class="mt-2 list-disc space-y-1 pl-4">
                 @foreach ($errorList as $message)
@@ -45,7 +45,7 @@
                 type="email"
                 name="email"
                 value="{{ $old['email'] ?? '' }}"
-                class="mt-1 rounded-2xl border {{ $emailError ? 'border-rose-300 bg-rose-50' : 'border-stone-200 bg-white' }} px-4 py-3 text-stone-700 focus:border-stone-400 focus:outline-none"
+                class="mt-1 rounded-lg border {{ $emailError ? 'border-rose-300 bg-rose-50' : 'border-stone-200 bg-white' }} px-4 py-3 text-stone-700 focus:border-stone-400 focus:outline-none"
                 autocomplete="email"
                 required
             >
@@ -59,7 +59,7 @@
             <input
                 type="password"
                 name="password"
-                class="mt-1 rounded-2xl border {{ $passwordError ? 'border-rose-300 bg-rose-50' : 'border-stone-200 bg-white' }} px-4 py-3 text-stone-700 focus:border-stone-400 focus:outline-none"
+                class="mt-1 rounded-lg border {{ $passwordError ? 'border-rose-300 bg-rose-50' : 'border-stone-200 bg-white' }} px-4 py-3 text-stone-700 focus:border-stone-400 focus:outline-none"
                 autocomplete="current-password"
                 required
             >
@@ -73,7 +73,7 @@
             <a href="{{ route('auth.password.forgot') }}" class="text-stone-700 hover:text-stone-900">Forgot password?</a>
         </div>
 
-        <button type="submit" class="w-full rounded-full bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800">
+        <button type="submit" class="w-full rounded-lg bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800">
             Sign in
         </button>
 

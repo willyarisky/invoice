@@ -6,7 +6,7 @@ use Zero\Lib\Model;
 
 class Invoice extends Model
 {
-    protected string $table = 'invoices';
+    protected ?string $table = 'invoices';
 
     protected array $fillable = [
         'client_id',
@@ -14,6 +14,7 @@ class Invoice extends Model
         'date',
         'due_date',
         'status',
+        'currency',
         'total',
     ];
 

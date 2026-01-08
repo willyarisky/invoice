@@ -18,5 +18,17 @@
         },
       }
     </script>
+    <style>
+      button,
+      input,
+      select,
+      textarea {
+        border-radius: 0.5rem !important;
+      }
+
+      a.rounded-lg {
+        border-radius: 0.5rem !important;
+      }
+    </style>
   </head>
   <body class="min-h-screen bg-stone-50 text-stone-900 antialiased">

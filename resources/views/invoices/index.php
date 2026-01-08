@@ -14,11 +14,11 @@
             <p class="text-sm text-stone-500">Monitor every invoice from draft to payment.</p>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input type="search" placeholder="Search by client or invoice #" class="w-full sm:w-64 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm focus:border-stone-400 focus:outline-none" oninput="filterInvoiceTable(this.value)">
-            <a href="{{ route('invoices.create') }}" class="inline-flex items-center justify-center rounded-full bg-stone-800 px-5 py-2 text-sm font-semibold text-white hover:bg-stone-700">Add invoice</a>
+            <input type="search" placeholder="Search by client or invoice #" class="w-full sm:w-64 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm focus:border-stone-400 focus:outline-none" oninput="filterInvoiceTable(this.value)">
+            <a href="{{ route('invoices.create') }}" class="inline-flex items-center justify-center rounded-lg bg-stone-800 px-5 py-2 text-sm font-semibold text-white hover:bg-stone-700">Add invoice</a>
         </div>
     </div>
-    <div class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-stone-100" id="invoice-table">
             <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <tr>
@@ -46,11 +46,11 @@
                         <td class="px-4 py-3">{{ $invoice['date'] ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $invoice['due_date'] ?? '—' }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $badge }}">
+                            <span class="inline-flex items-center rounded-lg px-3 py-1 text-xs font-semibold {{ $badge }}">
                                 {{ ucfirst($status) }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-right font-semibold">${{ number_format((float) ($invoice['total'] ?? 0), 2) }}</td>
+                        <td class="px-4 py-3 text-right font-semibold">{{ \App\Models\Setting::formatMoney((float) ($invoice['total'] ?? 0), $invoice['currency'] ?? null) }}</td>
                     </tr>
                 @empty
                     <tr>
