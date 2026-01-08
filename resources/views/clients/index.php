@@ -21,7 +21,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100">
-                @forelse ($clients as $client)
+                @foreach ($clients as $client)
                     <tr>
                         <td class="px-4 py-3">
                             <p class="font-semibold text-stone-900">{{ $client['name'] ?? 'Client' }}</p>
@@ -35,7 +35,7 @@
                     <tr>
                         <td colspan="4" class="px-4 py-6 text-center text-stone-500">Add your first client to start invoicing.</td>
                     </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
     </div>

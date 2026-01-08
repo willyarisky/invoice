@@ -31,7 +31,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100 text-sm text-stone-700">
-                @forelse ($invoices as $invoice)
+                @foreach ($invoices as $invoice)
                     @php
                         $status = strtolower((string) ($invoice['status'] ?? 'draft'));
                         $badge = $statusColors[$status] ?? 'bg-stone-100 text-stone-700';
@@ -56,7 +56,7 @@
                     <tr>
                         <td colspan="6" class="px-4 py-6 text-center text-sm text-stone-500">No invoices just yet. Create one to get started!</td>
                     </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
     </div>

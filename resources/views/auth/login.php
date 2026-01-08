@@ -1,54 +1,84 @@
-@layout('layouts.app', ['title' => 'Sign In'])
+@layout('layouts.auth', ['title' => 'Sign In'])
 
 @section('content')
-<div class="container py-5" style="max-width: 480px;">
-    <h1 class="mb-4 text-center">Sign In</h1>
+@php
+    $errorList = [];
+    if (is_array($errors ?? null)) {
+        foreach ($errors as $message) {
+            if (is_string($message) && $message !== '') {
+                $errorList[] = $message;
+            }
+        }
+    }
+    $emailError = $errors['email'] ?? null;
+    $passwordError = $errors['password'] ?? null;
+@endphp
+
+<div class="space-y-6">
+    <div>
+        <p class="text-xs uppercase tracking-[0.4em] text-stone-400">Welcome back</p>
+        <h2 class="mt-3 font-display text-3xl text-stone-900">Sign in to your workspace</h2>
+        <p class="mt-2 text-sm text-stone-500">Use your team email to continue.</p>
+    </div>
 
     @if (!empty($status ?? ''))
-        <div class="alert alert-success" role="alert">
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {{ $status ?? '' }}
         </div>
     @endif
 
-    <form method="POST" action="{{ route('auth.login.attempt') }}" class="card shadow-sm p-4">
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
+    @if ($errorList !== [])
+        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <p class="font-semibold">We could not sign you in.</p>
+            <ul class="mt-2 list-disc space-y-1 pl-4">
+                @foreach ($errorList as $message)
+                    <li>{{ $message }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('auth.login.attempt') }}" class="space-y-4">
+        <label class="flex flex-col text-sm font-medium text-stone-700">
+            Email address
             <input
                 type="email"
-                class="form-control {{ isset($errors['email']) ? 'is-invalid' : '' }}"
-                id="email"
                 name="email"
                 value="{{ $old['email'] ?? '' }}"
+                class="mt-1 rounded-2xl border {{ $emailError ? 'border-rose-300 bg-rose-50' : 'border-stone-200 bg-white' }} px-4 py-3 text-stone-700 focus:border-stone-400 focus:outline-none"
+                autocomplete="email"
                 required
             >
-            @if (isset($errors['email']))
-                <div class="invalid-feedback">
-                    {{ $errors['email'] ?? '' }}
-                </div>
+            @if ($emailError)
+                <span class="mt-1 text-xs text-rose-500">{{ $emailError }}</span>
             @endif
-        </div>
+        </label>
 
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
+        <label class="flex flex-col text-sm font-medium text-stone-700">
+            Password
             <input
                 type="password"
-                class="form-control {{ isset($errors['password']) ? 'is-invalid' : '' }}"
-                id="password"
                 name="password"
+                class="mt-1 rounded-2xl border {{ $passwordError ? 'border-rose-300 bg-rose-50' : 'border-stone-200 bg-white' }} px-4 py-3 text-stone-700 focus:border-stone-400 focus:outline-none"
+                autocomplete="current-password"
                 required
             >
-            @if (isset($errors['password']))
-                <div class="invalid-feedback">
-                    {{ $errors['password'] ?? '' }}
-                </div>
+            @if ($passwordError)
+                <span class="mt-1 text-xs text-rose-500">{{ $passwordError }}</span>
             @endif
+        </label>
+
+        <div class="flex items-center justify-between text-sm text-stone-500">
+            <span>Need access? Ask your admin.</span>
+            <a href="{{ route('auth.password.forgot') }}" class="text-stone-700 hover:text-stone-900">Forgot password?</a>
         </div>
 
-        <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary">Log In</button>
-            <a href="{{ route('auth.password.forgot') }}" class="btn btn-link">Forgot password?</a>
-            <a href="{{ route('auth.register.show') }}" class="btn btn-link">Create an account</a>
-            <a href="{{ route('home') }}" class="btn btn-link">Back to home</a>
+        <button type="submit" class="w-full rounded-full bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800">
+            Sign in
+        </button>
+
+        <div class="text-center text-sm text-stone-500">
+            New here? <a href="{{ route('auth.register.show') }}" class="font-semibold text-stone-800 hover:text-stone-900">Create an account</a>
         </div>
     </form>
 </div>

@@ -6,7 +6,7 @@ use Zero\Lib\Model;
 
 class Admin extends Model
 {
-    protected string $table = 'admin';
+    protected ?string $table = 'admin';
 
     protected array $fillable = [
         'name',

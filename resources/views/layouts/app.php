@@ -2,12 +2,22 @@
 @php
     $request = \Zero\Lib\Http\Request::instance();
     $path = trim($request->path(), '/');
+    $currentUser = \Zero\Lib\Auth\Auth::user();
+    $isAdmin = false;
+    if ($currentUser && isset($currentUser->email)) {
+        $isAdmin = \App\Models\Admin::query()
+            ->where('email', strtolower((string) $currentUser->email))
+            ->exists();
+    }
     $navItems = [
         ['label' => 'Dashboard', 'href' => route('home'), 'pattern' => '/^$/'],
         ['label' => 'Invoices', 'href' => route('invoices.index'), 'pattern' => '/^invoices/'],
         ['label' => 'Clients', 'href' => route('clients.index'), 'pattern' => '/^clients/'],
         ['label' => 'Settings', 'href' => route('settings.index'), 'pattern' => '/^settings/'],
     ];
+    if ($isAdmin) {
+        $navItems[] = ['label' => 'Admin', 'href' => route('admin.users.create'), 'pattern' => '/^admin/'];
+    }
 @endphp
 <div class="min-h-screen flex bg-stone-50">
     <aside class="hidden md:flex md:w-64 lg:w-72 flex-col bg-white border-r border-stone-200 print:hidden">
@@ -37,9 +47,20 @@
             </div>
             <div class="flex items-center gap-2">
                 <span class="hidden sm:inline-block text-sm text-stone-500">Today {{ date('M j, Y') }}</span>
-                <a href="{{ route('invoices.create') }}" class="inline-flex items-center gap-2 rounded-full bg-stone-800 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800">
-                    <span>New Invoice</span>
-                </a>
+                @if ($currentUser)
+                    <a href="{{ route('invoices.create') }}" class="inline-flex items-center gap-2 rounded-full bg-stone-800 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800">
+                        <span>New Invoice</span>
+                    </a>
+                    <form method="POST" action="{{ route('auth.logout') }}">
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
+                            Log out
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('auth.login.show') }}" class="inline-flex items-center gap-2 rounded-full bg-stone-800 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800">
+                        <span>Sign in</span>
+                    </a>
+                @endif
             </div>
         </header>
         <main class="flex-1 px-4 py-6 sm:px-6 lg:px-10">
