@@ -55,7 +55,7 @@
             Your invoices, beautifully organized.
           </h1>
           <p class="max-w-xl text-base text-stone-600 sm:text-lg">
-            Keep your billing workflow calm and controlled. Track outstanding invoices, manage clients, and share updates
+            Keep your billing workflow calm and controlled. Track outstanding invoices, manage customers, and share updates
             with your team from one place.
           </p>
           <div class="flex flex-wrap gap-3 text-sm text-stone-500">

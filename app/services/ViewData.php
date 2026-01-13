@@ -26,7 +26,7 @@ class ViewData
         $navItems = [
             ['label' => 'Dashboard', 'href' => route('home'), 'pattern' => '/^$/'],
             ['label' => 'Invoices', 'href' => route('invoices.index'), 'pattern' => '/^invoices/'],
-            ['label' => 'Clients', 'href' => route('clients.index'), 'pattern' => '/^clients/'],
+            ['label' => 'Customers', 'href' => route('customers.index'), 'pattern' => '/^customers/'],
             ['label' => 'Transactions', 'href' => route('transactions.index'), 'pattern' => '/^transactions/'],
             ['label' => 'Vendors', 'href' => route('vendors.index'), 'pattern' => '/^vendors/'],
             ['label' => 'Settings', 'href' => route('settings.index'), 'pattern' => '/^settings/'],

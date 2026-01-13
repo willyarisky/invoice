@@ -13,14 +13,14 @@ use Zero\Lib\Http\Response;
 use Zero\Lib\Session;
 use Zero\Lib\Validation\ValidationException;
 
-class ClientsController
+class CustomersController
 {
     public function index()
     {
         $layout = ViewData::appLayout();
-        $status = Session::get('client_status');
+        $status = Session::get('customer_status');
 
-        Session::remove('client_status');
+        Session::remove('customer_status');
 
         $today = date('Y-m-d');
         $overdueRow = DBML::table('invoices')
@@ -47,7 +47,7 @@ class ClientsController
             'draft' => (float) ($draftRow['total'] ?? 0),
         ];
 
-        $clients = DBML::table('clients as c')
+        $customers = DBML::table('customers as c')
             ->select(
                 'c.id',
                 'c.name',
@@ -59,22 +59,22 @@ class ClientsController
                 DBML::raw("COALESCE(SUM(CASE WHEN i.status = 'paid' THEN i.total ELSE 0 END), 0) as total_paid"),
                 DBML::raw("COALESCE(SUM(CASE WHEN i.status = 'sent' AND i.due_date IS NOT NULL AND i.due_date < '{$today}' THEN i.total ELSE 0 END), 0) as total_overdue")
             )
-            ->leftJoin('invoices as i', 'i.client_id', '=', 'c.id')
+            ->leftJoin('invoices as i', 'i.customer_id', '=', 'c.id')
             ->groupBy('c.id', 'c.name', 'c.email', 'c.address')
             ->orderBy('c.name')
             ->get();
 
         $defaultCurrency = Setting::getValue('default_currency');
-        foreach ($clients as $index => $client) {
-            $search = strtolower(trim((string) ($client['name'] ?? '') . ' ' . (string) ($client['email'] ?? '')));
-            $clients[$index]['search'] = $search;
-            $clients[$index]['total_label'] = Setting::formatMoney((float) ($client['total_invoices'] ?? 0), $defaultCurrency);
-            $clients[$index]['paid_label'] = Setting::formatMoney((float) ($client['total_paid'] ?? 0), $defaultCurrency);
-            $clients[$index]['overdue_label'] = Setting::formatMoney((float) ($client['total_overdue'] ?? 0), $defaultCurrency);
+        foreach ($customers as $index => $customer) {
+            $search = strtolower(trim((string) ($customer['name'] ?? '') . ' ' . (string) ($customer['email'] ?? '')));
+            $customers[$index]['search'] = $search;
+            $customers[$index]['total_label'] = Setting::formatMoney((float) ($customer['total_invoices'] ?? 0), $defaultCurrency);
+            $customers[$index]['paid_label'] = Setting::formatMoney((float) ($customer['total_paid'] ?? 0), $defaultCurrency);
+            $customers[$index]['overdue_label'] = Setting::formatMoney((float) ($customer['total_overdue'] ?? 0), $defaultCurrency);
         }
 
-        return view('clients/index', array_merge($layout, [
-            'clients' => $clients,
+        return view('customers/index', array_merge($layout, [
+            'customers' => $customers,
             'status' => $status,
             'totals' => $totals,
         ]));
@@ -83,42 +83,42 @@ class ClientsController
     public function create()
     {
         $layout = ViewData::appLayout();
-        $errors = Session::get('client_errors') ?? [];
-        $old = Session::get('client_old') ?? [];
+        $errors = Session::get('customer_errors') ?? [];
+        $old = Session::get('customer_old') ?? [];
 
-        Session::remove('client_errors');
-        Session::remove('client_old');
+        Session::remove('customer_errors');
+        Session::remove('customer_old');
 
-        return view('clients/create', array_merge($layout, [
+        return view('customers/create', array_merge($layout, [
             'errors' => $errors,
             'old' => $old,
         ]));
     }
 
-    public function show(int $client)
+    public function show(int $customer)
     {
         $layout = ViewData::appLayout();
-        $emailStatus = Session::get('client_email_status');
-        $emailErrors = Session::get('client_email_errors') ?? [];
-        $emailOld = Session::get('client_email_old') ?? [];
+        $emailStatus = Session::get('customer_email_status');
+        $emailErrors = Session::get('customer_email_errors') ?? [];
+        $emailOld = Session::get('customer_email_old') ?? [];
 
-        Session::remove('client_email_status');
-        Session::remove('client_email_errors');
-        Session::remove('client_email_old');
+        Session::remove('customer_email_status');
+        Session::remove('customer_email_errors');
+        Session::remove('customer_email_old');
 
-        $record = DBML::table('clients')
+        $record = DBML::table('customers')
             ->select('id', 'name', 'email', 'address')
-            ->where('id', $client)
+            ->where('id', $customer)
             ->first();
 
         if ($record === null) {
-            Session::set('client_status', 'Client not found.');
-            return Response::redirect('/clients');
+            Session::set('customer_status', 'Customer not found.');
+            return Response::redirect('/customers');
         }
 
         $invoices = DBML::table('invoices as i')
             ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.currency', 'i.total')
-            ->where('i.client_id', $client)
+            ->where('i.customer_id', $customer)
             ->orderByDesc('i.date')
             ->orderByDesc('i.id')
             ->get();
@@ -148,8 +148,8 @@ class ClientsController
             $totals['open'] += $amount;
         }
 
-        $clientName = (string) ($record['name'] ?? 'Client');
-        $parts = preg_split('/\s+/', trim($clientName));
+        $customerName = (string) ($record['name'] ?? 'Customer');
+        $parts = preg_split('/\s+/', trim($customerName));
         $initials = '';
         foreach (array_filter($parts) as $part) {
             $initials .= strtoupper(substr($part, 0, 1));
@@ -188,7 +188,7 @@ class ClientsController
         $adminEmail = $this->resolveAdminEmail();
         $brandName = (string) ($layout['brandName'] ?? 'Invoice App');
         $defaultSubject = 'Message from ' . $brandName;
-        $defaultMessage = "Hi {$clientName},\n\nI wanted to reach out regarding your account.\n\nThanks,\n{$brandName}";
+        $defaultMessage = "Hi {$customerName},\n\nI wanted to reach out regarding your account.\n\nThanks,\n{$brandName}";
         $emailSubject = $emailOld['subject'] ?? $defaultSubject;
         $emailMessage = $emailOld['message'] ?? $defaultMessage;
         $autoOpenEmailModal = !empty($emailErrors);
@@ -199,9 +199,9 @@ class ClientsController
             $currentUserEmail = trim((string) $currentUser->email);
         }
 
-        return view('clients/show', array_merge($layout, [
-            'client' => $record,
-            'clientName' => $clientName,
+        return view('customers/show', array_merge($layout, [
+            'customer' => $record,
+            'customerName' => $customerName,
             'initials' => $initials,
             'invoiceRows' => $invoiceRows,
             'totalsLabels' => $totalsLabels,
@@ -217,23 +217,23 @@ class ClientsController
         ]));
     }
 
-    public function edit(int $client)
+    public function edit(int $customer)
     {
         $layout = ViewData::appLayout();
-        $errors = Session::get('client_edit_errors') ?? [];
-        $old = Session::get('client_edit_old') ?? [];
+        $errors = Session::get('customer_edit_errors') ?? [];
+        $old = Session::get('customer_edit_old') ?? [];
 
-        Session::remove('client_edit_errors');
-        Session::remove('client_edit_old');
+        Session::remove('customer_edit_errors');
+        Session::remove('customer_edit_old');
 
-        $record = DBML::table('clients')
+        $record = DBML::table('customers')
             ->select('id', 'name', 'email', 'address')
-            ->where('id', $client)
+            ->where('id', $customer)
             ->first();
 
         if ($record === null) {
-            Session::set('client_status', 'Client not found.');
-            return Response::redirect('/clients');
+            Session::set('customer_status', 'Customer not found.');
+            return Response::redirect('/customers');
         }
 
         $values = [
@@ -246,8 +246,8 @@ class ClientsController
             $values = array_merge($values, $old);
         }
 
-        return view('clients/edit', array_merge($layout, [
-            'client' => $record,
+        return view('customers/edit', array_merge($layout, [
+            'customer' => $record,
             'errors' => $errors,
             'values' => $values,
         ]));
@@ -255,14 +255,14 @@ class ClientsController
 
     public function store(Request $request): Response
     {
-        Session::remove('client_status');
-        Session::remove('client_errors');
-        Session::remove('client_old');
+        Session::remove('customer_status');
+        Session::remove('customer_errors');
+        Session::remove('customer_old');
 
         try {
             $data = $request->validate([
                 'name' => ['required', 'string', 'min:2'],
-                'email' => ['required', 'email', 'unique:clients,email'],
+                'email' => ['required', 'email', 'unique:customers,email'],
                 'address' => ['string'],
             ]);
         } catch (ValidationException $exception) {
@@ -271,16 +271,16 @@ class ClientsController
                 $exception->errors()
             );
 
-            Session::set('client_errors', $messages);
-            Session::set('client_old', $request->all());
+            Session::set('customer_errors', $messages);
+            Session::set('customer_old', $request->all());
 
-            return Response::redirect('/clients/create');
+            return Response::redirect('/customers/create');
         }
 
         $address = trim((string) ($data['address'] ?? ''));
         $timestamp = date('Y-m-d H:i:s');
 
-        DBML::table('clients')->insert([
+        DBML::table('customers')->insert([
             'name' => trim((string) $data['name']),
             'email' => strtolower(trim((string) $data['email'])),
             'address' => $address === '' ? null : $address,
@@ -288,21 +288,21 @@ class ClientsController
             'updated_at' => $timestamp,
         ]);
 
-        Session::set('client_status', 'Client added successfully.');
+        Session::set('customer_status', 'Customer added successfully.');
 
-        return Response::redirect('/clients');
+        return Response::redirect('/customers');
     }
 
-    public function update(int $client, Request $request): Response
+    public function update(int $customer, Request $request): Response
     {
-        Session::remove('client_status');
-        Session::remove('client_edit_errors');
-        Session::remove('client_edit_old');
+        Session::remove('customer_status');
+        Session::remove('customer_edit_errors');
+        Session::remove('customer_edit_old');
 
         try {
             $data = $request->validate([
                 'name' => ['required', 'string', 'min:2'],
-                'email' => ['required', 'email', 'unique:clients,email,' . $client . ',id'],
+                'email' => ['required', 'email', 'unique:customers,email,' . $customer . ',id'],
                 'address' => ['string'],
             ]);
         } catch (ValidationException $exception) {
@@ -311,47 +311,47 @@ class ClientsController
                 $exception->errors()
             );
 
-            Session::set('client_edit_errors', $messages);
-            Session::set('client_edit_old', $request->all());
+            Session::set('customer_edit_errors', $messages);
+            Session::set('customer_edit_old', $request->all());
 
-            return Response::redirect('/clients/' . $client . '/edit');
+            return Response::redirect('/customers/' . $customer . '/edit');
         }
 
         $address = trim((string) ($data['address'] ?? ''));
         $timestamp = date('Y-m-d H:i:s');
 
-        DBML::table('clients')->where('id', $client)->update([
+        DBML::table('customers')->where('id', $customer)->update([
             'name' => trim((string) $data['name']),
             'email' => strtolower(trim((string) $data['email'])),
             'address' => $address === '' ? null : $address,
             'updated_at' => $timestamp,
         ]);
 
-        Session::set('client_status', 'Client updated successfully.');
+        Session::set('customer_status', 'Customer updated successfully.');
 
-        return Response::redirect('/clients');
+        return Response::redirect('/customers');
     }
 
-    public function sendEmail(int $client, Request $request): Response
+    public function sendEmail(int $customer, Request $request): Response
     {
-        Session::remove('client_email_status');
-        Session::remove('client_email_errors');
-        Session::remove('client_email_old');
+        Session::remove('customer_email_status');
+        Session::remove('customer_email_errors');
+        Session::remove('customer_email_old');
 
-        $record = DBML::table('clients')
+        $record = DBML::table('customers')
             ->select('id', 'name', 'email')
-            ->where('id', $client)
+            ->where('id', $customer)
             ->first();
 
         if ($record === null) {
-            Session::set('client_email_errors', ['email' => 'Client not found.']);
-            return Response::redirect('/clients');
+            Session::set('customer_email_errors', ['email' => 'Customer not found.']);
+            return Response::redirect('/customers');
         }
 
-        $clientEmail = trim((string) ($record['email'] ?? ''));
-        if ($clientEmail === '') {
-            Session::set('client_email_errors', ['email' => 'Client does not have an email address.']);
-            return Response::redirect('/clients/' . $client);
+        $customerEmail = trim((string) ($record['email'] ?? ''));
+        if ($customerEmail === '') {
+            Session::set('customer_email_errors', ['email' => 'Customer does not have an email address.']);
+            return Response::redirect('/customers/' . $customer);
         }
 
         try {
@@ -367,10 +367,10 @@ class ClientsController
                 $exception->errors()
             );
 
-            Session::set('client_email_errors', $messages);
-            Session::set('client_email_old', $request->all());
+            Session::set('customer_email_errors', $messages);
+            Session::set('customer_email_old', $request->all());
 
-            return Response::redirect('/clients/' . $client);
+            return Response::redirect('/customers/' . $customer);
         }
 
         $subject = trim((string) $data['subject']);
@@ -383,23 +383,23 @@ class ClientsController
         $safeBody = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
         $html = '<div style="font-family: Arial, sans-serif; line-height: 1.6;">' . $safeBody . '</div>';
 
-        Mail::send(function ($mail) use ($clientEmail, $record, $subject, $html, $ccAdmin, $adminEmail, $ccMyself, $currentUserEmail) {
-            $mail->to($clientEmail, (string) ($record['name'] ?? 'Customer'))
+        Mail::send(function ($mail) use ($customerEmail, $record, $subject, $html, $ccAdmin, $adminEmail, $ccMyself, $currentUserEmail) {
+            $mail->to($customerEmail, (string) ($record['name'] ?? 'Customer'))
                 ->subject($subject)
                 ->html($html);
 
-            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $clientEmail) {
+            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $customerEmail) {
                 $mail->cc($adminEmail);
             }
 
-            if ($ccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $clientEmail) {
+            if ($ccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $customerEmail) {
                 $mail->cc($currentUserEmail);
             }
         });
 
-        Session::set('client_email_status', 'Email sent successfully.');
+        Session::set('customer_email_status', 'Email sent successfully.');
 
-        return Response::redirect('/clients/' . $client);
+        return Response::redirect('/customers/' . $customer);
     }
 
     private function resolveAdminEmail(): string

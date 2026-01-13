@@ -1,9 +1,11 @@
 <?php
 
-$encryption = (string) env('MAIL_ENCRYPTION', 'tls');
-$encryption = strtolower(trim($encryption));
-if ($encryption === '' || $encryption === 'null' || $encryption === 'none') {
-    $encryption = null;
+$encryption = env('MAIL_ENCRYPTION', 'tls');
+if (is_string($encryption)) {
+    $encryption = strtolower(trim($encryption));
+    if ($encryption === '' || $encryption === 'null' || $encryption === 'none') {
+        $encryption = null;
+    }
 }
 
 if ($encryption !== null && ! in_array($encryption, ['ssl', 'tls'], true)) {
@@ -21,8 +23,8 @@ return [
     'smtp' => [
         'host' => env('MAIL_HOST', '127.0.0.1'),
         'port' => (int) env('MAIL_PORT', 587),
-        'username' => env('MAIL_USERNAME', '') ?: null,
-        'password' => env('MAIL_PASSWORD', '') ?: null,
+        'username' => env('MAIL_USERNAME', null) ?: null,
+        'password' => env('MAIL_PASSWORD', null) ?: null,
         'encryption' => $encryption, // tls, ssl, or null
         'timeout' => (int) env('MAIL_TIMEOUT', 30),
         'hello' => env('MAIL_HELO_DOMAIN', null) ?: null,

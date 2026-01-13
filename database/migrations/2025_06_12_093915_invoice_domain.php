@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('clients', function (Blueprint $table) {
+        Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email');
@@ -19,7 +19,7 @@ return new class extends Migration
 
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
+            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->string('invoice_no');
             $table->date('date');
             $table->date('due_date')->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->decimal('total', 12, 2)->default(0);
             $table->timestamps();
             $table->unique('invoice_no');
-            $table->index('client_id');
+            $table->index('customer_id');
         });
 
         Schema::create('invoice_items', function (Blueprint $table) {
@@ -56,7 +56,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('invoice_items');
         Schema::dropIfExists('invoices');
-        Schema::dropIfExists('clients');
+        Schema::dropIfExists('customers');
         Schema::dropIfExists('admin');
     }
 };

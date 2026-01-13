@@ -39,11 +39,11 @@ class TransactionsController
                 't.invoice_id',
                 'v.name as vendor_name',
                 'i.invoice_no',
-                'c.name as client_name'
+                'c.name as customer_name'
             )
             ->leftJoin('vendors as v', 'v.id', '=', 't.vendor_id')
             ->leftJoin('invoices as i', 'i.id', '=', 't.invoice_id')
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->orderByDesc('t.date')
             ->orderByDesc('t.id');
 
@@ -72,7 +72,7 @@ class TransactionsController
                 'source' => $transaction['source'] ?? 'manual',
                 'invoice_id' => $transaction['invoice_id'] ?? null,
                 'invoice_no' => $transaction['invoice_no'] ?? '',
-                'client_name' => $transaction['client_name'] ?? '—',
+                'customer_name' => $transaction['customer_name'] ?? '—',
                 'description' => $transaction['description'] ?? '',
                 'vendor_name' => $transaction['vendor_name'] ?? '—',
                 'amount_label' => $amountLabel,
@@ -148,12 +148,12 @@ class TransactionsController
                 'v.name as vendor_name',
                 'cat.name as category_name',
                 'i.invoice_no',
-                'c.name as client_name'
+                'c.name as customer_name'
             )
             ->leftJoin('vendors as v', 'v.id', '=', 't.vendor_id')
             ->leftJoin('categories as cat', 'cat.id', '=', 't.category_id')
             ->leftJoin('invoices as i', 'i.id', '=', 't.invoice_id')
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->where('t.id', $transaction)
             ->first();
 

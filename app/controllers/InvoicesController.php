@@ -29,28 +29,28 @@ class InvoicesController
     public function index(Request $request)
     {
         $layout = ViewData::appLayout();
-        $clientId = (int) $request->input('client_id', 0);
-        $filterClient = null;
+        $customerId = (int) $request->input('customer_id', 0);
+        $filterCustomer = null;
 
-        if ($clientId > 0) {
-            $filterClient = DBML::table('clients')
+        if ($customerId > 0) {
+            $filterCustomer = DBML::table('customers')
                 ->select('id', 'name')
-                ->where('id', $clientId)
+                ->where('id', $customerId)
                 ->first();
 
-            if ($filterClient === null) {
-                $filterClient = ['id' => $clientId, 'name' => 'Client #' . $clientId];
+            if ($filterCustomer === null) {
+                $filterCustomer = ['id' => $customerId, 'name' => 'Customer #' . $customerId];
             }
         }
 
         $query = DBML::table('invoices as i')
-            ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.currency', 'i.total', 'c.name as client_name')
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.currency', 'i.total', 'c.name as customer_name')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->orderByDesc('i.date')
             ->orderByDesc('i.id');
 
-        if ($clientId > 0) {
-            $query->where('i.client_id', $clientId);
+        if ($customerId > 0) {
+            $query->where('i.customer_id', $customerId);
         }
 
         $invoices = $query->get();
@@ -65,20 +65,20 @@ class InvoicesController
             $invoiceRows[] = [
                 'id' => $invoice['id'] ?? null,
                 'invoice_no' => $invoice['invoice_no'] ?? '—',
-                'client_name' => $invoice['client_name'] ?? 'Unknown client',
+                'customer_name' => $invoice['customer_name'] ?? 'Unknown customer',
                 'date' => $invoice['date'] ?? '—',
                 'due_date' => $invoice['due_date'] ?? '—',
                 'status_label' => ucfirst($status),
                 'badge_class' => $statusColors[$status] ?? 'bg-stone-100 text-stone-700',
                 'total_label' => Setting::formatMoney((float) ($invoice['total'] ?? 0), $invoice['currency'] ?? null),
-                'search' => strtolower((string) ($invoice['invoice_no'] ?? '') . ' ' . (string) ($invoice['client_name'] ?? '') . ' ' . (string) ($invoice['date'] ?? '') . ' ' . (string) ($invoice['due_date'] ?? '') . ' ' . (string) ($invoice['status'] ?? '')),
+                'search' => strtolower((string) ($invoice['invoice_no'] ?? '') . ' ' . (string) ($invoice['customer_name'] ?? '') . ' ' . (string) ($invoice['date'] ?? '') . ' ' . (string) ($invoice['due_date'] ?? '') . ' ' . (string) ($invoice['status'] ?? '')),
                 'show_url' => route('invoices.show', ['invoice' => $invoice['id'] ?? 0]),
             ];
         }
 
         return view('invoices/index', array_merge($layout, [
             'invoices' => $invoiceRows,
-            'filterClient' => $filterClient,
+            'filterCustomer' => $filterCustomer,
         ]));
     }
 
@@ -89,7 +89,7 @@ class InvoicesController
 
     public function store(Request $request)
     {
-        $clientId = (int) $request->input('client_id');
+        $customerId = (int) $request->input('customer_id');
         $invoiceNo = trim((string) $request->input('invoice_no', $this->generateInvoiceNumber()));
         $invoiceDate = $this->normaliseDate((string) $request->input('date'), fallback: date('Y-m-d'));
         $dueDate = $this->normaliseDate((string) $request->input('due_date'), allowEmpty: true);
@@ -99,10 +99,10 @@ class InvoicesController
         $taxIdInput = (int) $request->input('tax_id', 0);
         $notes = trim((string) $request->input('notes', ''));
 
-        if ($clientId <= 0) {
+        if ($customerId <= 0) {
             return view('invoices/create', $this->resolveCreateViewData(
                 $request->all(),
-                'Please choose a client before saving the invoice.',
+                'Please choose a customer before saving the invoice.',
                 $invoiceNo
             ));
         }
@@ -119,12 +119,12 @@ class InvoicesController
             $currency = strtoupper(trim(Setting::getValue('default_currency')));
         }
 
-        $clientExists = DBML::table('clients')->where('id', $clientId)->exists();
+        $customerExists = DBML::table('customers')->where('id', $customerId)->exists();
 
-        if (!$clientExists) {
+        if (!$customerExists) {
             return view('invoices/create', $this->resolveCreateViewData(
                 $request->all(),
-                'The selected client could not be found. Please create the client first.',
+                'The selected customer could not be found. Please create the customer first.',
                 $invoiceNo
             ));
         }
@@ -145,12 +145,12 @@ class InvoicesController
             $pdo->beginTransaction();
 
             $invoiceStmt = $pdo->prepare('
-                INSERT INTO invoices (client_id, invoice_no, date, due_date, status, currency, tax_id, tax_rate, tax_amount, total, notes, public_uuid, created_at, updated_at)
-                VALUES (:client_id, :invoice_no, :date, :due_date, :status, :currency, :tax_id, :tax_rate, :tax_amount, :total, :notes, :public_uuid, :created_at, :updated_at)
+                INSERT INTO invoices (customer_id, invoice_no, date, due_date, status, currency, tax_id, tax_rate, tax_amount, total, notes, public_uuid, created_at, updated_at)
+                VALUES (:customer_id, :invoice_no, :date, :due_date, :status, :currency, :tax_id, :tax_rate, :tax_amount, :total, :notes, :public_uuid, :created_at, :updated_at)
             ');
 
             $invoiceStmt->execute([
-                ':client_id' => $clientId,
+                ':customer_id' => $customerId,
                 ':invoice_no' => $invoiceNo,
                 ':date' => $invoiceDate,
                 ':due_date' => $dueDate,
@@ -258,12 +258,12 @@ class InvoicesController
                 'i.public_uuid',
                 'i.created_at',
                 'i.updated_at',
-                'c.name as client_name',
-                'c.email as client_email',
-                'c.address as client_address',
+                'c.name as customer_name',
+                'c.email as customer_email',
+                'c.address as customer_address',
                 't.name as tax_name'
             )
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->leftJoin('taxes as t', 't.id', '=', 'i.tax_id')
             ->where('i.id', $invoice)
             ->first();
@@ -329,7 +329,7 @@ class InvoicesController
         $record = DBML::table('invoices as i')
             ->select(
                 'i.id',
-                'i.client_id',
+                'i.customer_id',
                 'i.invoice_no',
                 'i.date',
                 'i.due_date',
@@ -363,7 +363,7 @@ class InvoicesController
         $record = DBML::table('invoices as i')
             ->select(
                 'i.id',
-                'i.client_id',
+                'i.customer_id',
                 'i.date',
                 'i.due_date',
                 'i.currency',
@@ -395,7 +395,7 @@ class InvoicesController
         $record = DBML::table('invoices as i')
             ->select(
                 'i.id',
-                'i.client_id',
+                'i.customer_id',
                 'i.invoice_no',
                 'i.date',
                 'i.due_date',
@@ -416,7 +416,7 @@ class InvoicesController
             return Response::redirect('/invoices');
         }
 
-        $clientId = (int) $request->input('client_id');
+        $customerId = (int) $request->input('customer_id');
         $invoiceNo = trim((string) $request->input('invoice_no', (string) ($record['invoice_no'] ?? '')));
         $invoiceDate = $this->normaliseDate((string) $request->input('date'), fallback: date('Y-m-d'));
         $dueDate = $this->normaliseDate((string) $request->input('due_date'), allowEmpty: true);
@@ -426,12 +426,12 @@ class InvoicesController
         $taxIdInput = (int) $request->input('tax_id', 0);
         $notes = trim((string) $request->input('notes', ''));
 
-        if ($clientId <= 0) {
+        if ($customerId <= 0) {
             return view('invoices/create', $this->buildInvoiceFormViewData(
                 $record,
                 $items,
                 $request->all(),
-                'Please choose a client before saving the invoice.'
+                'Please choose a customer before saving the invoice.'
             ));
         }
 
@@ -448,14 +448,14 @@ class InvoicesController
             $currency = strtoupper(trim(Setting::getValue('default_currency')));
         }
 
-        $clientExists = DBML::table('clients')->where('id', $clientId)->exists();
+        $customerExists = DBML::table('customers')->where('id', $customerId)->exists();
 
-        if (!$clientExists) {
+        if (!$customerExists) {
             return view('invoices/create', $this->buildInvoiceFormViewData(
                 $record,
                 $items,
                 $request->all(),
-                'The selected client could not be found. Please create the client first.'
+                'The selected customer could not be found. Please create the customer first.'
             ));
         }
 
@@ -475,7 +475,7 @@ class InvoicesController
 
             $invoiceStmt = $pdo->prepare('
                 UPDATE invoices
-                SET client_id = :client_id,
+                SET customer_id = :customer_id,
                     invoice_no = :invoice_no,
                     date = :date,
                     due_date = :due_date,
@@ -491,7 +491,7 @@ class InvoicesController
             ');
 
             $invoiceStmt->execute([
-                ':client_id' => $clientId,
+                ':customer_id' => $customerId,
                 ':invoice_no' => $invoiceNo,
                 ':date' => $invoiceDate,
                 ':due_date' => $dueDate,
@@ -596,12 +596,12 @@ class InvoicesController
                 'i.tax_rate',
                 'i.tax_amount',
                 'i.notes',
-                'c.name as client_name',
-                'c.email as client_email',
-                'c.address as client_address',
+                'c.name as customer_name',
+                'c.email as customer_email',
+                'c.address as customer_address',
                 't.name as tax_name'
             )
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->leftJoin('taxes as t', 't.id', '=', 'i.tax_id')
             ->where('i.id', $invoice)
             ->first();
@@ -645,12 +645,12 @@ class InvoicesController
                 'i.tax_amount',
                 'i.notes',
                 'i.public_uuid',
-                'c.name as client_name',
-                'c.email as client_email',
-                'c.address as client_address',
+                'c.name as customer_name',
+                'c.email as customer_email',
+                'c.address as customer_address',
                 't.name as tax_name'
             )
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->leftJoin('taxes as t', 't.id', '=', 'i.tax_id')
             ->where('i.public_uuid', $uuid)
             ->first();
@@ -694,12 +694,12 @@ class InvoicesController
                 'i.tax_rate',
                 'i.tax_amount',
                 'i.notes',
-                'c.name as client_name',
-                'c.email as client_email',
-                'c.address as client_address',
+                'c.name as customer_name',
+                'c.email as customer_email',
+                'c.address as customer_address',
                 't.name as tax_name'
             )
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->leftJoin('taxes as t', 't.id', '=', 'i.tax_id')
             ->where('i.id', $invoice)
             ->first();
@@ -709,9 +709,9 @@ class InvoicesController
             return Response::redirect('/invoices');
         }
 
-        $clientEmail = trim((string) ($record['client_email'] ?? ''));
-        if ($clientEmail === '') {
-            Session::set('invoice_email_errors', ['email' => 'Client does not have an email address.']);
+        $customerEmail = trim((string) ($record['customer_email'] ?? ''));
+        if ($customerEmail === '') {
+            Session::set('invoice_email_errors', ['email' => 'Customer does not have an email address.']);
             return Response::redirect('/invoices/' . $invoice);
         }
 
@@ -771,16 +771,16 @@ class InvoicesController
         $pdfContent = $this->renderInvoicePdfContent($record, $items);
         $pdfName = $this->buildInvoicePdfName($record);
 
-        Mail::send(function ($mail) use ($record, $clientEmail, $subject, $html, $ccAdmin, $adminEmail, $ccMyself, $currentUserEmail, $pdfContent, $pdfName) {
-            $mail->to($clientEmail, (string) ($record['client_name'] ?? 'Customer'))
+        Mail::send(function ($mail) use ($record, $customerEmail, $subject, $html, $ccAdmin, $adminEmail, $ccMyself, $currentUserEmail, $pdfContent, $pdfName) {
+            $mail->to($customerEmail, (string) ($record['customer_name'] ?? 'Customer'))
                 ->subject($subject)
                 ->html($html);
 
-            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $clientEmail) {
+            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $customerEmail) {
                 $mail->cc($adminEmail);
             }
 
-            if ($ccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $clientEmail) {
+            if ($ccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $customerEmail) {
                 $mail->cc($currentUserEmail);
             }
 
@@ -802,7 +802,7 @@ class InvoicesController
             $invoice,
             'email_sent',
             'Email sent',
-            $clientEmail !== '' ? 'To: ' . $clientEmail : null,
+            $customerEmail !== '' ? 'To: ' . $customerEmail : null,
             $trackingToken,
             $timestamp
         );
@@ -825,9 +825,9 @@ class InvoicesController
                 'i.status',
                 'i.currency',
                 'i.total',
-                'c.name as client_name'
+                'c.name as customer_name'
             )
-            ->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->where('i.id', $invoice)
             ->first();
 
@@ -1070,10 +1070,10 @@ class InvoicesController
     private function resolveCreateViewData(array $old = [], ?string $error = null, ?string $invoiceNumber = null): array
     {
         $layout = ViewData::appLayout();
-        $clients = DBML::table('clients')->orderBy('name')->get();
-        $hasClients = !empty($clients);
+        $customers = DBML::table('customers')->orderBy('name')->get();
+        $hasCustomers = !empty($customers);
         $defaultCurrency = Setting::getValue('default_currency');
-        $selectedClient = (string) ($old['client_id'] ?? '');
+        $selectedCustomer = (string) ($old['customer_id'] ?? '');
         $selectedStatus = strtolower((string) ($old['status'] ?? 'draft'));
         if (!in_array($selectedStatus, $this->allowedStatuses, true)) {
             $selectedStatus = 'draft';
@@ -1143,23 +1143,23 @@ class InvoicesController
             ];
         }
 
-        $clientAddressMap = [];
-        foreach ($clients as $client) {
-            $clientId = (string) ($client['id'] ?? '');
-            if ($clientId === '') {
+        $customerAddressMap = [];
+        foreach ($customers as $customer) {
+            $customerId = (string) ($customer['id'] ?? '');
+            if ($customerId === '') {
                 continue;
             }
-            $clientAddressMap[$clientId] = (string) ($client['address'] ?? '');
+            $customerAddressMap[$customerId] = (string) ($customer['address'] ?? '');
         }
 
-        $selectedClientJson = json_encode((string) $selectedClient, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-        $clientAddressJson = json_encode($clientAddressMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $selectedCustomerJson = json_encode((string) $selectedCustomer, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $customerAddressJson = json_encode($customerAddressMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $lineItemsJson = json_encode($lineItems, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $selectedCurrencyJson = json_encode($selectedCurrency, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $selectedTaxJson = json_encode($selectedTaxId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $taxesJson = json_encode($taxMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $formValues = [
-            'client_id' => $selectedClient,
+            'customer_id' => $selectedCustomer,
             'status' => $selectedStatus,
             'currency' => $selectedCurrency,
             'date' => (string) ($old['date'] ?? date('Y-m-d')),
@@ -1169,8 +1169,8 @@ class InvoicesController
         ];
 
         return array_merge($layout, [
-            'clients' => $clients,
-            'hasClients' => $hasClients,
+            'customers' => $customers,
+            'hasCustomers' => $hasCustomers,
             'invoiceNumber' => $invoiceNumber ?? $this->generateInvoiceNumber(),
             'today' => date('Y-m-d'),
             'statusOptions' => array_map(
@@ -1180,12 +1180,12 @@ class InvoicesController
             'defaultCurrency' => $defaultCurrency,
             'currencyOptions' => $currencyOptions,
             'taxOptions' => $taxOptions,
-            'selectedClient' => $selectedClient,
+            'selectedCustomer' => $selectedCustomer,
             'selectedStatus' => $selectedStatus,
             'selectedCurrency' => $selectedCurrency,
             'selectedTaxId' => $selectedTaxId,
-            'selectedClientJson' => $selectedClientJson !== false ? $selectedClientJson : '""',
-            'clientAddressJson' => $clientAddressJson !== false ? $clientAddressJson : '{}',
+            'selectedCustomerJson' => $selectedCustomerJson !== false ? $selectedCustomerJson : '""',
+            'customerAddressJson' => $customerAddressJson !== false ? $customerAddressJson : '{}',
             'lineItemsJson' => $lineItemsJson !== false ? $lineItemsJson : '[]',
             'selectedCurrencyJson' => $selectedCurrencyJson !== false ? $selectedCurrencyJson : '""',
             'selectedTaxJson' => $selectedTaxJson !== false ? $selectedTaxJson : '""',
@@ -1216,7 +1216,7 @@ class InvoicesController
 
         $taxIdValue = (int) ($invoice['tax_id'] ?? 0);
         $values = [
-            'client_id' => (string) ($invoice['client_id'] ?? ''),
+            'customer_id' => (string) ($invoice['customer_id'] ?? ''),
             'invoice_no' => (string) ($invoice['invoice_no'] ?? ''),
             'date' => (string) ($invoice['date'] ?? ''),
             'due_date' => (string) ($invoice['due_date'] ?? ''),
@@ -1264,7 +1264,7 @@ class InvoicesController
 
         $taxIdValue = (int) ($invoice['tax_id'] ?? 0);
         $values = [
-            'client_id' => (string) ($invoice['client_id'] ?? ''),
+            'customer_id' => (string) ($invoice['customer_id'] ?? ''),
             'date' => (string) ($invoice['date'] ?? ''),
             'due_date' => (string) ($invoice['due_date'] ?? ''),
             'currency' => (string) ($invoice['currency'] ?? Setting::getValue('default_currency')),
@@ -1411,7 +1411,7 @@ class InvoicesController
                 'companyLogo' => $detailView['companyLogo'] ?? '',
                 'companyEmail' => $detailView['companyEmail'] ?? '',
                 'companyAddressHtml' => $detailView['companyAddressHtml'] ?? '',
-                'clientAddressHtml' => $detailView['clientAddressHtml'] ?? '',
+                'customerAddressHtml' => $detailView['customerAddressHtml'] ?? '',
                 'invoiceNo' => $detailView['invoiceNo'] ?? '',
                 'issued' => $detailView['issued'] ?? '',
                 'due' => $detailView['due'] ?? '',
@@ -1453,7 +1453,7 @@ class InvoicesController
         if ($companyEmail === '') {
             $companyEmail = trim((string) Setting::getValue('mail_from_address'));
         }
-        $clientAddress = trim((string) ($invoice['client_address'] ?? ''));
+        $customerAddress = trim((string) ($invoice['customer_address'] ?? ''));
         $invoiceNotes = trim((string) ($invoice['notes'] ?? ''));
         $hasNotes = $invoiceNotes !== '';
         $taxId = (int) ($invoice['tax_id'] ?? 0);
@@ -1485,7 +1485,7 @@ class InvoicesController
         $amountDue = strtolower((string) ($invoice['status'] ?? '')) === 'paid' ? 0.0 : (float) ($invoice['total'] ?? 0);
         $amountDueLabel = Setting::formatMoney($amountDue, $invoice['currency'] ?? null);
         $companyAddressHtml = nl2br(htmlspecialchars($companyAddress, ENT_QUOTES, 'UTF-8'));
-        $clientAddressHtml = nl2br(htmlspecialchars($clientAddress, ENT_QUOTES, 'UTF-8'));
+        $customerAddressHtml = nl2br(htmlspecialchars($customerAddress, ENT_QUOTES, 'UTF-8'));
         $notesHtml = nl2br(htmlspecialchars($invoiceNotes, ENT_QUOTES, 'UTF-8'));
 
         return [
@@ -1498,7 +1498,7 @@ class InvoicesController
             'companyAddress' => $companyAddress,
             'companyLogo' => $companyLogo,
             'companyEmail' => $companyEmail,
-            'clientAddress' => $clientAddress,
+            'customerAddress' => $customerAddress,
             'invoiceNotes' => $invoiceNotes,
             'hasNotes' => $hasNotes,
             'subtotalLabel' => $subtotalLabel,
@@ -1508,7 +1508,7 @@ class InvoicesController
             'totalLabel' => $totalLabel,
             'amountDueLabel' => $amountDueLabel,
             'companyAddressHtml' => $companyAddressHtml,
-            'clientAddressHtml' => $clientAddressHtml,
+            'customerAddressHtml' => $customerAddressHtml,
             'notesHtml' => $notesHtml,
         ];
     }
@@ -1552,7 +1552,7 @@ class InvoicesController
         $defaultSubject = $invoiceNo . ' from ' . $brandName;
         $defaultTemplate = (string) Setting::getValue('invoice_email_message');
         $defaultMessage = strtr($defaultTemplate, [
-            '{client_name}' => (string) ($invoice['client_name'] ?? 'there'),
+            '{customer_name}' => (string) ($invoice['customer_name'] ?? 'there'),
             '{invoice_no}' => (string) $invoiceNo,
             '{total}' => (string) $totalLabel,
             '{due_date}' => (string) $due,
@@ -1861,8 +1861,8 @@ class InvoicesController
     private function buildInvoicePdfLines(array $invoice, array $items): array
     {
         $invoiceNo = trim((string) ($invoice['invoice_no'] ?? ''));
-        $clientName = trim((string) ($invoice['client_name'] ?? ''));
-        $clientAddress = trim((string) ($invoice['client_address'] ?? ''));
+        $customerName = trim((string) ($invoice['customer_name'] ?? ''));
+        $customerAddress = trim((string) ($invoice['customer_address'] ?? ''));
         $issued = trim((string) ($invoice['date'] ?? ''));
         $due = trim((string) ($invoice['due_date'] ?? ''));
         $subtotalValue = 0.0;
@@ -1894,14 +1894,14 @@ class InvoicesController
             $lines[] = implode('  ', $dateParts);
         }
 
-        $hasClientInfo = $clientName !== '' || $clientAddress !== '';
-        if ($hasClientInfo) {
+        $hasCustomerInfo = $customerName !== '' || $customerAddress !== '';
+        if ($hasCustomerInfo) {
             $lines[] = '';
-            if ($clientName !== '') {
-                $lines[] = 'Bill to: ' . $clientName;
+            if ($customerName !== '') {
+                $lines[] = 'Bill to: ' . $customerName;
             }
-            if ($clientAddress !== '') {
-                foreach (explode("\n", str_replace(["\r\n", "\r"], "\n", $clientAddress)) as $addressLine) {
+            if ($customerAddress !== '') {
+                foreach (explode("\n", str_replace(["\r\n", "\r"], "\n", $customerAddress)) as $addressLine) {
                     $lines[] = 'Address: ' . $addressLine;
                 }
             }

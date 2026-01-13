@@ -15,15 +15,33 @@
     </div>
 
     @if ($linkedInvoice)
-        <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
-            This transaction is linked to invoice {{ $transaction['invoice_no'] ?? '' }}.
+        <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700" x-data="{ open: true }" x-show="open">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                    This transaction is linked to invoice {{ $transaction['invoice_no'] ?? '' }}.
+                </div>
+                <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
         </div>
     @endif
 
     <div class="rounded-xl border border-stone-200 bg-white px-6 py-6 shadow-sm">
         @if (!empty($errors ?? []))
-            <div class="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                <p class="font-semibold">Please review the transaction fields.</p>
+            <div class="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" x-data="{ open: true }" x-show="open">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1">
+                        <p class="font-semibold">Please review the transaction fields.</p>
+                    </div>
+                    <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         @endif
 

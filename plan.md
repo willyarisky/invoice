@@ -13,8 +13,8 @@ This plan is designed for a **Code Generation AI (Codex/LLM)** to follow. It use
 
 Create four tables with these specific fields:
 
-1. **`clients`**: `id`, `name`, `email`, `address`.
-2. **`invoices`**: `id`, `client_id`, `invoice_no`, `date`, `due_date`, `status` (Draft/Sent/Paid), `total`.
+1. **`customers`**: `id`, `name`, `email`, `address`.
+2. **`invoices`**: `id`, `customer_id`, `invoice_no`, `date`, `due_date`, `status` (Draft/Sent/Paid), `total`.
 3. **`invoice_items`**: `id`, `invoice_id`, `description`, `qty`, `unit_price`, `subtotal`.
 4. **`admin`**: `id`, `name`, `email`, `password_hash`, `last_login`.
 
@@ -25,11 +25,11 @@ Create four tables with these specific fields:
 
 * Implement a standard HTML5 boilerplate.
 * Include Tailwind CDN.
-* Add a simple Sidebar Navigation: Dashboard, Invoices, Clients, Settings.
+* Add a simple Sidebar Navigation: Dashboard, Invoices, Customers, Settings.
 
 #### **Module B: Invoice Creation Logic (The Form)**
 
-* Create a form that selects a **Client** from a dropdown.
+* Create a form that selects a **Customer** from a dropdown.
 * **Dynamic Line Items:** Use Vanilla JavaScript to allow users to "Add Row" for items (Description, Qty, Price).
 * **Auto-Calculations:** JavaScript to update the "Total" live as Qty/Price inputs change.
 

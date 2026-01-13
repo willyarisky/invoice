@@ -9,7 +9,7 @@ class Invoice extends Model
     protected ?string $table = 'invoices';
 
     protected array $fillable = [
-        'client_id',
+        'customer_id',
         'invoice_no',
         'date',
         'due_date',

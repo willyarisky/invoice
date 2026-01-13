@@ -254,9 +254,9 @@
             <div class="section" style="margin-top: 32px; padding-top: 32px;">
                 <div class="bill-to">
                     <p class="label">Bill To</p>
-                    <p class="bill-name">{{ $invoice['client_name'] ?? 'Client' }}</p>
-                    @if (!empty($clientAddressHtml))
-                        <p class="bill-line">{!! $clientAddressHtml !!}</p>
+                    <p class="bill-name">{{ $invoice['customer_name'] ?? 'Customer' }}</p>
+                    @if (!empty($customerAddressHtml))
+                        <p class="bill-line">{!! $customerAddressHtml !!}</p>
                     @endif
                 </div>
                 <div class="invoice-details">

@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Zero\Lib\Model;
 
-class Client extends Model
+class Customer extends Model
 {
-    protected ?string $table = 'clients';
+    protected ?string $table = 'customers';
 
     protected array $fillable = [
         'name',

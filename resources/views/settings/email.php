@@ -17,14 +17,32 @@
         <div class="rounded-xl border border-stone-200 bg-white px-6 py-6 shadow-sm">
 
             @if (!empty($status ?? ''))
-                <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                    {{ $status ?? '' }}
+                <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" x-data="{ open: true }" x-show="open">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1">
+                            {{ $status ?? '' }}
+                        </div>
+                        <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
+                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             @endif
 
             @if (!empty($errors ?? []))
-                <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    <p class="font-semibold">Please review the highlighted fields.</p>
+                <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" x-data="{ open: true }" x-show="open">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1">
+                            <p class="font-semibold">Please review the highlighted fields.</p>
+                        </div>
+                        <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
+                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             @endif
 
@@ -96,7 +114,7 @@
                 <label class="flex flex-col text-sm font-medium text-stone-700 lg:col-span-2">
                     Default invoice email message
                     <textarea name="invoice_email_message" rows="6" class="mt-1 border border-stone-200 bg-white px-4 py-2 text-stone-700">{{ $values['invoice_email_message'] ?? '' }}</textarea>
-                    <span class="mt-1 text-xs text-stone-500">Available tokens: {client_name}, {invoice_no}, {total}, {due_date}, {company_name}</span>
+                    <span class="mt-1 text-xs text-stone-500">Available tokens: {customer_name}, {invoice_no}, {total}, {due_date}, {company_name}</span>
                     @if (isset($errors['invoice_email_message']))
                         <span class="mt-1 text-xs text-rose-500">{{ $errors['invoice_email_message'] ?? '' }}</span>
                     @endif

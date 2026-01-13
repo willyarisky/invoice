@@ -22,9 +22,9 @@
         <div class="grid gap-6 md:grid-cols-2">
             <div>
                 <p class="text-xs uppercase text-stone-400">Bill To</p>
-                <p class="mt-1 text-sm font-semibold text-stone-900">{{ $invoice['client_name'] ?? 'Client' }}</p>
-                @if ($clientAddress !== '')
-                    <p class="mb-4 text-xs text-stone-500 whitespace-pre-line">{{ $clientAddress }}</p>
+                <p class="mt-1 text-sm font-semibold text-stone-900">{{ $invoice['customer_name'] ?? 'Customer' }}</p>
+                @if ($customerAddress !== '')
+                    <p class="mb-4 text-xs text-stone-500 whitespace-pre-line">{{ $customerAddress }}</p>
                 @endif
             </div>
             <div class="space-y-1 text-sm text-stone-600 max-w-[60%] md:justify-self-end">

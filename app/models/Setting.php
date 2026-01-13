@@ -77,7 +77,7 @@ class Setting extends Model
         ],
         'invoice_email_message' => [
             'label' => 'Invoice Email Message',
-            'default' => "Hi {client_name},\n\nPlease find {invoice_no} attached. The total due is {total}.\n\nThanks,\n{company_name}",
+            'default' => "Hi {customer_name},\n\nPlease find {invoice_no} attached. The total due is {total}.\n\nThanks,\n{company_name}",
         ],
         'primary_accent' => [
             'label' => 'Primary Accent',

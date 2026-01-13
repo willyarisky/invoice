@@ -151,16 +151,6 @@ if (!function_exists('zero_build_error_response')) {
             'status' => $status,
             'message' => $message,
         ]);
-        $viewData['pageTitle'] = (string) ($context['title'] ?? ($status . ' Error'));
-
-        if (class_exists('App\\Services\\ViewData')) {
-            try {
-                $layoutData = \App\Services\ViewData::appLayout();
-                $viewData = array_merge($layoutData, $viewData);
-            } catch (\Throwable) {
-                // Ignore layout data failures during error rendering.
-            }
-        }
 
         $html = null;
 

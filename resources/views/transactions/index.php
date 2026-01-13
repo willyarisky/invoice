@@ -17,8 +17,17 @@
     </div>
 
     @if (!empty($status ?? ''))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {{ $status ?? '' }}
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" x-data="{ open: true }" x-show="open">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                    {{ $status ?? '' }}
+                </div>
+                <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
         </div>
     @endif
 
@@ -48,7 +57,7 @@
                                 <a href="{{ route('invoices.show', ['invoice' => $transaction['invoice_id']]) }}" class="font-semibold text-stone-700 hover:text-stone-900" onclick="event.stopPropagation();">
                                     Invoice {{ $transaction['invoice_no'] ?? '' }}
                                 </a>
-                                <p class="text-xs text-stone-500">Client: {{ $transaction['client_name'] ?? '—' }}</p>
+                                <p class="text-xs text-stone-500">Customer: {{ $transaction['customer_name'] ?? '—' }}</p>
                             @else
                                 <span class="text-sm text-stone-600">Manual entry</span>
                                 @if (!empty($transaction['description'] ?? ''))

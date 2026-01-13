@@ -72,7 +72,6 @@
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <p class="text-lg font-semibold text-stone-900">Cash Flow</p>
-                <p class="text-xs text-stone-400">Cash coming in and going out of your business</p>
             </div>
             <div class="flex items-center gap-4 text-xs text-stone-500">
                 <button type="button" class="text-stone-400">...</button>
