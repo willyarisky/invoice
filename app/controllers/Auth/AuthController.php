@@ -4,6 +4,7 @@ namespace App\Controllers\Auth;
 
 use App\Models\User;
 use App\Services\Auth\EmailVerificationService;
+use App\Services\ViewData;
 use Zero\Lib\Auth\Auth;
 use Zero\Lib\Crypto;
 use Zero\Lib\Http\Request;
@@ -18,6 +19,7 @@ class AuthController
      */
     public function showLogin(): Response
     {
+        $layout = ViewData::authLayout();
 
         if (Auth::user()) {
             return Response::redirect('/');
@@ -31,7 +33,25 @@ class AuthController
         Session::remove('auth_errors');
         Session::remove('auth_old');
 
-        return view('auth/login', compact('status', 'errors', 'old'));
+        $errorList = [];
+        if (is_array($errors)) {
+            foreach ($errors as $message) {
+                if (is_string($message) && $message !== '') {
+                    $errorList[] = $message;
+                }
+            }
+        }
+        $emailError = $errors['email'] ?? null;
+        $passwordError = $errors['password'] ?? null;
+
+        return view('auth/login', array_merge($layout, [
+            'status' => $status,
+            'errors' => $errors,
+            'old' => $old,
+            'errorList' => $errorList,
+            'emailError' => $emailError,
+            'passwordError' => $passwordError,
+        ]));
     }
 
     /**

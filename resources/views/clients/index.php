@@ -1,85 +1,69 @@
-@layout('layouts.app', ['title' => 'Clients'])
+@layout('layouts.app', ['title' => 'Customers'])
 
 @section('content')
-<div class="space-y-6">
-    <div class="rounded-lg border border-stone-200 bg-white px-6 py-6 shadow-sm">
+<div class="space-y-8" x-data="{ search: '', get term() { return this.search.toLowerCase(); } }">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <p class="text-xs uppercase tracking-widest text-stone-400">Clients</p>
-            <p class="mt-2 text-2xl font-semibold text-stone-900">Add a client</p>
-            <p class="mt-2 text-sm text-stone-500">Store client details to unlock invoice creation.</p>
+            <h1 class="text-2xl font-semibold text-stone-900">Customers</h1>
         </div>
-
-        @if (!empty($status ?? ''))
-            <div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                {{ $status ?? '' }}
-            </div>
-        @endif
-
-        <form method="POST" action="{{ route('clients.store') }}" class="mt-6 grid gap-4 lg:grid-cols-2">
-            <label class="flex flex-col text-sm font-medium text-stone-700">
-                Client name
-                <input type="text" name="name" value="{{ $old['name'] ?? '' }}" class="mt-1 rounded-lg border border-stone-200 bg-white px-4 py-2 text-stone-700">
-                @if (isset($errors['name']))
-                    <span class="mt-1 text-xs text-rose-500">{{ $errors['name'] ?? '' }}</span>
-                @endif
-            </label>
-
-            <label class="flex flex-col text-sm font-medium text-stone-700">
-                Email address
-                <input type="email" name="email" value="{{ $old['email'] ?? '' }}" class="mt-1 rounded-lg border border-stone-200 bg-white px-4 py-2 text-stone-700">
-                @if (isset($errors['email']))
-                    <span class="mt-1 text-xs text-rose-500">{{ $errors['email'] ?? '' }}</span>
-                @endif
-            </label>
-
-            <label class="flex flex-col text-sm font-medium text-stone-700 lg:col-span-2">
-                Mailing address
-                <textarea name="address" rows="3" class="mt-1 rounded-lg border border-stone-200 bg-white px-4 py-2 text-stone-700">{{ $old['address'] ?? '' }}</textarea>
-                @if (isset($errors['address']))
-                    <span class="mt-1 text-xs text-rose-500">{{ $errors['address'] ?? '' }}</span>
-                @endif
-            </label>
-
-            <div class="flex justify-end gap-3 lg:col-span-2">
-                <button type="submit" class="rounded-lg bg-stone-800 px-6 py-2 text-sm font-semibold text-white hover:bg-stone-700">
-                    Save client
-                </button>
-            </div>
-        </form>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input type="search" placeholder="Search client" class="w-full sm:w-64 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm focus:border-stone-400 focus:outline-none" x-model="search">
+            <a href="{{ route('clients.create') }}" class="inline-flex items-center justify-center rounded-xl bg-stone-800 px-5 py-2 text-sm font-semibold text-white hover:bg-stone-700">New Customer</a>
+        </div>
     </div>
 
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-            <p class="text-sm text-stone-500">Keep your client directory close and understand their value.</p>
+    @if (!empty($status ?? ''))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {{ $status ?? '' }}
         </div>
-        <div class="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600">
-            {{ count($clients ?? []) }} clients tracked
-        </div>
-    </div>
-    <div class="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
-        <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
+    @endif
+
+    <div class="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+        <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700" id="clients-table">
             <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-widest text-stone-500">
                 <tr>
-                    <th class="px-4 py-3">Client</th>
+                    <th class="px-4 py-3 w-10">
+                        <input type="checkbox" class="h-4 w-4 rounded-xl border-stone-300 text-stone-700">
+                    </th>
+                    <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Email</th>
-                    <th class="px-4 py-3">Invoices</th>
-                    <th class="px-4 py-3 text-right">Lifetime value</th>
+                    <th class="px-4 py-3 text-right">Total invoice</th>
+                    <th class="px-4 py-3 text-right">Paid</th>
+                    <th class="px-4 py-3 text-right">Overdue</th>
+                    <th class="px-4 py-3 text-right">Action</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100">
                 @foreach ($clients as $client)
-                    <tr>
+                    <tr class="client-row" x-show="term === '' || $el.dataset.search.includes(term)" data-search="{{ $client['search'] ?? '' }}">
+                        <td class="px-4 py-3">
+                            <input type="checkbox" class="h-4 w-4 rounded-xl border-stone-300 text-stone-700">
+                        </td>
                         <td class="px-4 py-3">
                             <p class="font-semibold text-stone-900">{{ $client['name'] ?? 'Client' }}</p>
-                            <p class="text-xs text-stone-500">{{ $client['address'] ?? 'No mailing address' }}</p>
+                            <p class="text-xs text-stone-500">Tax Number</p>
                         </td>
-                        <td class="px-4 py-3">{{ $client['email'] ?? '—' }}</td>
-                        <td class="px-4 py-3">{{ $client['invoice_count'] ?? 0 }}</td>
-                        <td class="px-4 py-3 text-right font-semibold">{{ \App\Models\Setting::formatMoney((float) ($client['lifetime_value'] ?? 0)) }}</td>
+                        <td class="px-4 py-3">
+                            <p class="text-stone-700">{{ $client['email'] ?? '—' }}</p>
+                            <p class="text-xs text-stone-500">Phone</p>
+                        </td>
+                        <td class="px-4 py-3 text-right text-stone-700">{{ $client['total_label'] ?? '—' }}</td>
+                        <td class="px-4 py-3 text-right text-stone-700">{{ $client['paid_label'] ?? '—' }}</td>
+                        <td class="px-4 py-3 text-right text-stone-700">{{ $client['overdue_label'] ?? '—' }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="{{ route('clients.show', ['client' => $client['id']]) }}" class="rounded-xl border border-stone-200 px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-50">
+                                    View
+                                </a>
+                                <a href="{{ route('clients.edit', ['client' => $client['id']]) }}" class="rounded-xl border border-stone-200 px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-50">
+                                    Edit
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-6 text-center text-stone-500">Add your first client to start invoicing.</td>
+                        <td colspan="7" class="px-4 py-6 text-center text-stone-500">Add your first client to start invoicing.</td>
                     </tr>
                 @endforeach
             </tbody>

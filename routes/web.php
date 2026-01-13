@@ -5,11 +5,12 @@ use App\Controllers\DashboardController;
 use App\Controllers\Auth\EmailVerificationController;
 use App\Controllers\HomeController;
 use App\Controllers\Auth\PasswordResetController;
-use App\Controllers\Auth\RegisterController;
 use App\Controllers\Admin\UsersController as AdminUsersController;
 use App\Controllers\ClientsController;
 use App\Controllers\InvoicesController;
 use App\Controllers\SettingsController;
+use App\Controllers\TransactionsController;
+use App\Controllers\VendorsController;
 use App\Middlewares\Auth as AuthMiddleware;
 use App\Middlewares\Guest as GuestMiddleware;
 use App\Middlewares\Role as RoleMiddleware;
@@ -20,11 +21,34 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
 
     Router::get('/invoices', [InvoicesController::class, 'index'])->name('invoices.index');
     Router::get('/invoices/create', [InvoicesController::class, 'create'])->name('invoices.create');
+    Router::get('/invoices/{invoice}/duplicate', [InvoicesController::class, 'duplicate'])->name('invoices.duplicate');
     Router::post('/invoices', [InvoicesController::class, 'store'])->name('invoices.store');
+    Router::get('/invoices/{invoice}/edit', [InvoicesController::class, 'edit'])->name('invoices.edit');
+    Router::post('/invoices/{invoice}/update', [InvoicesController::class, 'update'])->name('invoices.update');
+    Router::post('/invoices/{invoice}/mark-sent', [InvoicesController::class, 'markSent'])->name('invoices.markSent');
+    Router::post('/invoices/{invoice}/email', [InvoicesController::class, 'sendEmail'])->name('invoices.email');
+    Router::post('/invoices/{invoice}/payment', [InvoicesController::class, 'recordPayment'])->name('invoices.payment');
+    Router::post('/invoices/{invoice}/payment/update', [InvoicesController::class, 'updatePayment'])->name('invoices.payment.update');
+    Router::get('/invoices/{invoice}/download', [InvoicesController::class, 'download'])->name('invoices.download');
     Router::get('/invoices/{invoice}', [InvoicesController::class, 'show'])->name('invoices.show');
 
     Router::get('/clients', [ClientsController::class, 'index'])->name('clients.index');
+    Router::get('/clients/create', [ClientsController::class, 'create'])->name('clients.create');
+    Router::get('/clients/{client}', [ClientsController::class, 'show'])->name('clients.show');
+    Router::get('/clients/{client}/edit', [ClientsController::class, 'edit'])->name('clients.edit');
     Router::post('/clients', [ClientsController::class, 'store'])->name('clients.store');
+    Router::post('/clients/{client}/email', [ClientsController::class, 'sendEmail'])->name('clients.email');
+    Router::post('/clients/{client}/update', [ClientsController::class, 'update'])->name('clients.update');
+    Router::get('/transactions', [TransactionsController::class, 'index'])->name('transactions.index');
+    Router::get('/transactions/create', [TransactionsController::class, 'create'])->name('transactions.create');
+    Router::get('/transactions/{transaction}', [TransactionsController::class, 'show'])->name('transactions.show');
+    Router::get('/transactions/{transaction}/edit', [TransactionsController::class, 'edit'])->name('transactions.edit');
+    Router::post('/transactions', [TransactionsController::class, 'store'])->name('transactions.store');
+    Router::post('/transactions/{transaction}/update', [TransactionsController::class, 'update'])->name('transactions.update');
+    Router::get('/vendors', [VendorsController::class, 'index'])->name('vendors.index');
+    Router::get('/vendors/create', [VendorsController::class, 'create'])->name('vendors.create');
+    Router::post('/vendors', [VendorsController::class, 'store'])->name('vendors.store');
+    Router::get('/vendors/{vendor}', [VendorsController::class, 'show'])->name('vendors.show');
     Router::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Router::post('/settings/company', [SettingsController::class, 'updateCompany'])->name('settings.company.update');
     Router::get('/settings/currency', [SettingsController::class, 'currency'])->name('settings.currency.index');
@@ -44,11 +68,18 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/settings/taxes/{tax}/delete', [SettingsController::class, 'deleteTax'])->name('settings.taxes.delete');
 });
 
+Router::get('/invoices/{invoice}/email-open/{token}', [InvoicesController::class, 'trackEmailOpen'])->name('invoices.email.open');
+Router::get('/invoices/public/{uuid}', [InvoicesController::class, 'publicView'])->name('invoices.public');
+
+Router::group(['middleware' => [AuthMiddleware::class, [RoleMiddleware::class, 'admin']]], function () {
+    Router::get('/settings/admin', [AdminUsersController::class, 'create'])->name('settings.admin.users');
+    Router::post('/settings/admin', [AdminUsersController::class, 'store'])->name('settings.admin.users.store');
+    Router::post('/settings/admin/{user}/update', [AdminUsersController::class, 'update'])->name('settings.admin.users.update');
+    Router::post('/settings/admin/{user}/delete', [AdminUsersController::class, 'delete'])->name('settings.admin.users.delete');
+});
+
 // Guest-only authentication routes
 Router::group(['middleware' => GuestMiddleware::class, 'name' => 'auth'], function () {
-    Router::get('/register', [RegisterController::class, 'show'])->name('register.show');
-    Router::post('/register', [RegisterController::class, 'store'])->name('register.store');
-
     Router::get('/login', [AuthController::class, 'showLogin'])->name('login.show');
     Router::post('/login', [AuthController::class, 'login'])->name('login.attempt');
 

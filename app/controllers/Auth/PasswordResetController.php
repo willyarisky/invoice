@@ -5,6 +5,7 @@ namespace App\Controllers\Auth;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use App\Services\Auth\PasswordResetService;
+use App\Services\ViewData;
 use Zero\Lib\Http\Request;
 use Zero\Lib\Http\Response;
 use Zero\Lib\Session;
@@ -14,6 +15,7 @@ class PasswordResetController
 {
     public function request(): Response
     {
+        $layout = ViewData::appLayout();
         $status = Session::get('status');
         $errors = Session::get('password_reset_errors') ?? [];
         $old = Session::get('password_reset_old') ?? [];
@@ -22,7 +24,11 @@ class PasswordResetController
         Session::remove('password_reset_errors');
         Session::remove('password_reset_old');
 
-        return view('auth/forgot-password', compact('status', 'errors', 'old'));
+        return view('auth/forgot-password', array_merge($layout, [
+            'status' => $status,
+            'errors' => $errors,
+            'old' => $old,
+        ]));
     }
 
     public function email(Request $request): Response
@@ -58,6 +64,7 @@ class PasswordResetController
 
     public function show(Request $request, string $token): Response
     {
+        $layout = ViewData::appLayout();
         try {
             $payload = $request->validate([
                 'email' => ['required', 'email'],
@@ -77,11 +84,11 @@ class PasswordResetController
         $errors = Session::get('password_reset_errors') ?? [];
         Session::remove('password_reset_errors');
 
-        return view('auth/reset-password', [
+        return view('auth/reset-password', array_merge($layout, [
             'token' => $token,
             'email' => $email,
             'errors' => $errors,
-        ]);
+        ]));
     }
 
     public function update(Request $request): Response
@@ -122,7 +129,7 @@ class PasswordResetController
 
         if (! $user instanceof User) {
             Session::set('status', 'We could not find an account for that email address.');
-            return Response::redirect('/register');
+            return Response::redirect('/login');
         }
 
         PasswordResetService::resetPassword($user, $password);

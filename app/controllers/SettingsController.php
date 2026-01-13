@@ -3,15 +3,28 @@
 namespace App\Controllers;
 
 use App\Models\Setting;
+use App\Services\ViewData;
 use Throwable;
 use Zero\Lib\DB\DBML;
 use Zero\Lib\Http\Request;
 use Zero\Lib\Http\Response;
+use Zero\Lib\Http\UploadedFile;
 use Zero\Lib\Session;
 use Zero\Lib\Validation\ValidationException;
 
 class SettingsController
 {
+    /** @var string[] */
+    private array $mailKeys = [
+        'mail_from_address',
+        'mail_from_name',
+        'mail_mailer',
+        'mail_host',
+        'mail_port',
+        'mail_username',
+        'mail_password',
+        'mail_encryption',
+    ];
     public function index(): Response
     {
         return $this->company();
@@ -19,21 +32,24 @@ class SettingsController
 
     public function company(): Response
     {
+        $layout = ViewData::appLayout();
         [$status, $errors, $old] = $this->consumeFlash(
             'settings_company_status',
             'settings_company_errors',
             'settings_company_old'
         );
 
-        return view('settings/index', [
+        return view('settings/index', array_merge($layout, [
             'values' => $this->mergeValues($old),
             'status' => $status,
             'errors' => $errors,
-        ]);
+            'settingsActive' => 'company',
+        ]));
     }
 
     public function currency(): Response
     {
+        $layout = ViewData::appLayout();
         [$status, $errors, $old] = $this->consumeFlash(
             'settings_currency_status',
             'settings_currency_errors',
@@ -61,34 +77,71 @@ class SettingsController
             $currencies = [];
         }
 
-        return view('settings/currency', [
+        $autoOpenAddModal = (isset($errors['code']) || isset($errors['name']) || isset($errors['symbol'])) && empty($editId);
+        $autoOpenEditModal = !empty($editId);
+        $addOld = empty($editId) ? ($old ?? []) : [];
+        $editOld = !empty($editId) ? ($old ?? []) : [];
+        $editActionValue = $autoOpenEditModal ? route('settings.currency.entry.update', ['currency' => $editId]) : '';
+        $editActionJson = json_encode($editActionValue, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $editCodeJson = json_encode($editOld['code'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $editNameJson = json_encode($editOld['name'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $editSymbolJson = json_encode($editOld['symbol'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+
+        $currencyRows = [];
+        foreach ($currencies as $currency) {
+            $code = strtoupper((string) ($currency['code'] ?? ''));
+            $isDefault = !empty($currency['is_default']) || ($defaultCurrency === $code);
+            $currencyRows[] = [
+                'id' => $currency['id'] ?? null,
+                'code' => $code,
+                'name' => $currency['name'] ?? '',
+                'symbol' => $currency['symbol'] ?? '',
+                'is_default' => $isDefault,
+                'edit_action' => route('settings.currency.entry.update', ['currency' => $currency['id'] ?? 0]),
+                'edit_is_default' => $isDefault ? '1' : '0',
+            ];
+        }
+
+        return view('settings/currency', array_merge($layout, [
             'values' => $this->mergeValues($old),
             'status' => $status,
             'errors' => $errors,
-            'old' => $old,
+            'addOld' => $addOld,
+            'editOld' => $editOld,
             'editId' => $editId,
-            'currencies' => $currencies,
+            'currencies' => $currencyRows,
             'defaultCurrency' => $defaultCurrency,
-        ]);
+            'autoOpenAddModal' => $autoOpenAddModal,
+            'autoOpenEditModal' => $autoOpenEditModal,
+            'editActionJson' => $editActionJson !== false ? $editActionJson : '""',
+            'editCodeJson' => $editCodeJson !== false ? $editCodeJson : '""',
+            'editNameJson' => $editNameJson !== false ? $editNameJson : '""',
+            'editSymbolJson' => $editSymbolJson !== false ? $editSymbolJson : '""',
+            'editDefault' => !empty($editOld['set_default']),
+            'settingsActive' => 'currency',
+        ]));
     }
 
     public function email(): Response
     {
+        $layout = ViewData::appLayout();
         [$status, $errors, $old] = $this->consumeFlash(
             'settings_email_status',
             'settings_email_errors',
             'settings_email_old'
         );
 
-        return view('settings/email', [
+        return view('settings/email', array_merge($layout, [
             'values' => $this->mergeValues($old),
             'status' => $status,
             'errors' => $errors,
-        ]);
+            'settingsActive' => 'email',
+        ]));
     }
 
     public function categories(): Response
     {
+        $layout = ViewData::appLayout();
         [$status, $errors, $old] = $this->consumeFlash(
             'category_status',
             'category_errors',
@@ -108,18 +161,42 @@ class SettingsController
             $categories = [];
         }
 
-        return view('settings/categories', [
+        $autoOpenAddModal = isset($errors['name']) && empty($editId);
+        $autoOpenEditModal = !empty($editId);
+        $addOld = empty($editId) ? ($old ?? []) : [];
+        $editOld = !empty($editId) ? ($old ?? []) : [];
+        $editActionValue = $autoOpenEditModal ? route('settings.categories.update', ['category' => $editId]) : '';
+        $editActionJson = json_encode($editActionValue, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $editNameJson = json_encode($editOld['name'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+
+        $categoryRows = [];
+        foreach ($categories as $category) {
+            $categoryRows[] = [
+                'id' => $category['id'] ?? null,
+                'name' => $category['name'] ?? '',
+                'edit_action' => route('settings.categories.update', ['category' => $category['id'] ?? 0]),
+            ];
+        }
+
+        return view('settings/categories', array_merge($layout, [
             'values' => $this->mergeValues([]),
             'status' => $status,
             'errors' => $errors,
-            'old' => $old,
+            'addOld' => $addOld,
+            'editOld' => $editOld,
             'editId' => $editId,
-            'categories' => $categories,
-        ]);
+            'categories' => $categoryRows,
+            'autoOpenAddModal' => $autoOpenAddModal,
+            'autoOpenEditModal' => $autoOpenEditModal,
+            'editActionJson' => $editActionJson !== false ? $editActionJson : '""',
+            'editNameJson' => $editNameJson !== false ? $editNameJson : '""',
+            'settingsActive' => 'categories',
+        ]));
     }
 
     public function taxes(): Response
     {
+        $layout = ViewData::appLayout();
         [$status, $errors, $old] = $this->consumeFlash(
             'tax_status',
             'tax_errors',
@@ -139,14 +216,42 @@ class SettingsController
             $taxes = [];
         }
 
-        return view('settings/taxes', [
+        $autoOpenAddModal = (isset($errors['name']) || isset($errors['rate'])) && empty($editId);
+        $autoOpenEditModal = !empty($editId);
+        $addOld = empty($editId) ? ($old ?? []) : [];
+        $editOld = !empty($editId) ? ($old ?? []) : [];
+        $editActionValue = $autoOpenEditModal ? route('settings.taxes.update', ['tax' => $editId]) : '';
+        $editActionJson = json_encode($editActionValue, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $editNameJson = json_encode($editOld['name'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $editRateJson = json_encode($editOld['rate'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+
+        $taxRows = [];
+        foreach ($taxes as $tax) {
+            $rateValue = number_format((float) ($tax['rate'] ?? 0), 2, '.', '');
+            $taxRows[] = [
+                'id' => $tax['id'] ?? null,
+                'name' => $tax['name'] ?? '',
+                'rate_label' => $rateValue . '%',
+                'rate_value' => $rateValue,
+                'edit_action' => route('settings.taxes.update', ['tax' => $tax['id'] ?? 0]),
+            ];
+        }
+
+        return view('settings/taxes', array_merge($layout, [
             'values' => $this->mergeValues([]),
             'status' => $status,
             'errors' => $errors,
-            'old' => $old,
+            'addOld' => $addOld,
+            'editOld' => $editOld,
             'editId' => $editId,
-            'taxes' => $taxes,
-        ]);
+            'taxes' => $taxRows,
+            'autoOpenAddModal' => $autoOpenAddModal,
+            'autoOpenEditModal' => $autoOpenEditModal,
+            'editActionJson' => $editActionJson !== false ? $editActionJson : '""',
+            'editNameJson' => $editNameJson !== false ? $editNameJson : '""',
+            'editRateJson' => $editRateJson !== false ? $editRateJson : '""',
+            'settingsActive' => 'taxes',
+        ]));
     }
 
     public function updateCompany(Request $request): Response
@@ -158,8 +263,11 @@ class SettingsController
         try {
             $data = $request->validate([
                 'business_name' => ['required', 'string', 'min:2'],
-                'company_logo' => ['string', 'max:2048'],
+                'company_logo' => ['image', 'max:47'],
                 'company_address' => ['string', 'max:500'],
+                'company_email' => ['string', 'email', 'max:190'],
+                'company_phone' => ['string', 'max:40'],
+                'remove_logo' => ['boolean'],
             ]);
         } catch (ValidationException $exception) {
             $messages = array_map(
@@ -173,10 +281,28 @@ class SettingsController
             return Response::redirect('/settings');
         }
 
+        $logoValue = Setting::getValue('company_logo');
+        $logoFile = $request->file('company_logo');
+        $removeLogo = strtolower((string) $request->input('remove_logo', '')) === '1';
+        if ($removeLogo) {
+            $logoValue = '';
+        } elseif ($logoFile instanceof UploadedFile && $logoFile->isValid()) {
+            $mime = trim((string) $logoFile->getClientMimeType());
+            if ($mime === '') {
+                $mime = trim((string) $logoFile->getMimeType());
+            }
+            if ($mime === '') {
+                $mime = 'image/png';
+            }
+            $logoValue = 'data:' . $mime . ';base64,' . base64_encode($logoFile->read());
+        }
+
         $payload = [
             'business_name' => trim((string) $data['business_name']),
-            'company_logo' => trim((string) ($data['company_logo'] ?? '')),
+            'company_logo' => $logoValue,
             'company_address' => trim((string) ($data['company_address'] ?? '')),
+            'company_email' => trim((string) ($data['company_email'] ?? '')),
+            'company_phone' => trim((string) ($data['company_phone'] ?? '')),
         ];
 
         $this->saveSettings($payload);
@@ -421,6 +547,7 @@ class SettingsController
                 'mail_username' => ['string'],
                 'mail_password' => ['string'],
                 'mail_encryption' => ['string'],
+                'invoice_email_message' => ['string'],
             ]);
         } catch (ValidationException $exception) {
             $messages = array_map(
@@ -444,13 +571,34 @@ class SettingsController
             'mail_password' => trim((string) ($data['mail_password'] ?? '')),
             'mail_encryption' => strtolower(trim((string) ($data['mail_encryption'] ?? ''))),
         ];
+        $invoiceEmailMessage = trim((string) $request->input('invoice_email_message', ''));
 
         $allowedEncryption = ['tls', 'ssl', 'none', ''];
         if (!in_array($payload['mail_encryption'], $allowedEncryption, true)) {
             $payload['mail_encryption'] = 'tls';
         }
 
-        $this->saveSettings($payload);
+        try {
+            $this->updateEnvFile([
+                'MAIL_FROM_ADDRESS' => $payload['mail_from_address'],
+                'MAIL_FROM_NAME' => $payload['mail_from_name'],
+                'MAIL_MAILER' => $payload['mail_mailer'],
+                'MAIL_HOST' => $payload['mail_host'],
+                'MAIL_PORT' => $payload['mail_port'],
+                'MAIL_USERNAME' => $payload['mail_username'],
+                'MAIL_PASSWORD' => $payload['mail_password'],
+                'MAIL_ENCRYPTION' => $payload['mail_encryption'],
+            ]);
+        } catch (Throwable $exception) {
+            Session::set('settings_email_errors', ['mail_host' => 'We could not update the .env mail settings.']);
+            Session::set('settings_email_old', $request->all());
+
+            return Response::redirect('/settings/email');
+        }
+
+        $this->saveSettings([
+            'invoice_email_message' => $invoiceEmailMessage,
+        ]);
 
         Session::set('settings_email_status', 'Email settings updated.');
 
@@ -658,6 +806,9 @@ class SettingsController
     private function saveSettings(array $payload): void
     {
         foreach ($payload as $key => $value) {
+            if (in_array($key, $this->mailKeys, true)) {
+                continue;
+            }
             $setting = Setting::query()->where('key', $key)->first();
 
             if ($setting instanceof Setting) {
@@ -670,5 +821,61 @@ class SettingsController
                 'value' => $value,
             ]);
         }
+    }
+
+    /**
+     * @param array<string, string> $values
+     */
+    private function updateEnvFile(array $values): void
+    {
+        $envPath = dirname(__DIR__, 2) . '/.env';
+
+        $lines = file($envPath, FILE_IGNORE_NEW_LINES);
+        if ($lines === false) {
+            throw new \RuntimeException('Unable to read .env file.');
+        }
+
+        $found = array_fill_keys(array_keys($values), false);
+
+        foreach ($lines as $index => $line) {
+            foreach ($values as $key => $value) {
+                if (preg_match('/^\s*' . preg_quote($key, '/') . '=/u', $line) === 1) {
+                    $lines[$index] = $key . '=' . $this->formatEnvValue($value);
+                    $found[$key] = true;
+                    continue 2;
+                }
+            }
+        }
+
+        foreach ($found as $key => $seen) {
+            if (! $seen) {
+                $lines[] = $key . '=' . $this->formatEnvValue($values[$key]);
+            }
+        }
+
+        $contents = implode("\n", $lines);
+        if (!str_ends_with($contents, "\n")) {
+            $contents .= "\n";
+        }
+
+        if (file_put_contents($envPath, $contents) === false) {
+            throw new \RuntimeException('Unable to write .env file.');
+        }
+    }
+
+    private function formatEnvValue(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+
+        $needsQuotes = strpbrk($value, " \t\n\r#=\"") !== false;
+        if (! $needsQuotes) {
+            return $value;
+        }
+
+        $escaped = str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
+
+        return '"' . $escaped . '"';
     }
 }

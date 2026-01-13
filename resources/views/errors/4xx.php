@@ -1,4 +1,4 @@
-@layout('layouts.app', ['title' => ($status ?? 400) . ' Error'])
+@layout('layouts.app', ['title' => $pageTitle ?? 'Error'])
 
 @section('content')
 <div class="container py-5 text-center">

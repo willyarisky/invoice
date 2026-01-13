@@ -31,6 +31,14 @@ class Setting extends Model
             'label' => 'Company Address',
             'default' => '',
         ],
+        'company_email' => [
+            'label' => 'Company Email',
+            'default' => '',
+        ],
+        'company_phone' => [
+            'label' => 'Company Phone',
+            'default' => '',
+        ],
         'default_currency' => [
             'label' => 'Currency',
             'default' => 'USD',
@@ -67,6 +75,10 @@ class Setting extends Model
             'label' => 'Mail Encryption',
             'default' => 'tls',
         ],
+        'invoice_email_message' => [
+            'label' => 'Invoice Email Message',
+            'default' => "Hi {client_name},\n\nPlease find {invoice_no} attached. The total due is {total}.\n\nThanks,\n{company_name}",
+        ],
         'primary_accent' => [
             'label' => 'Primary Accent',
             'default' => 'Stone',
@@ -79,6 +91,18 @@ class Setting extends Model
 
     /** @var array<string, string>|null */
     private static ?array $resolvedCache = null;
+
+    /** @var array<string, string> */
+    private static array $mailEnvMap = [
+        'mail_from_address' => 'MAIL_FROM_ADDRESS',
+        'mail_from_name' => 'MAIL_FROM_NAME',
+        'mail_mailer' => 'MAIL_MAILER',
+        'mail_host' => 'MAIL_HOST',
+        'mail_port' => 'MAIL_PORT',
+        'mail_username' => 'MAIL_USERNAME',
+        'mail_password' => 'MAIL_PASSWORD',
+        'mail_encryption' => 'MAIL_ENCRYPTION',
+    ];
 
     /** @var array<string, array{name: string, symbol: string, is_default: bool}>|null */
     private static ?array $currencyCache = null;
@@ -100,6 +124,7 @@ class Setting extends Model
         $definitions['mail_username']['default'] = (string) env('MAIL_USERNAME', $definitions['mail_username']['default']);
         $definitions['mail_password']['default'] = (string) env('MAIL_PASSWORD', $definitions['mail_password']['default']);
         $definitions['mail_encryption']['default'] = (string) env('MAIL_ENCRYPTION', $definitions['mail_encryption']['default']);
+        $definitions['company_email']['default'] = (string) env('MAIL_FROM_ADDRESS', $definitions['company_email']['default']);
 
         return $definitions;
     }
@@ -131,6 +156,10 @@ class Setting extends Model
         $resolved = [];
 
         foreach (self::definitions() as $key => $definition) {
+            if (self::isMailKey($key)) {
+                $resolved[$key] = self::mailValue($key, $definition['default']);
+                continue;
+            }
             $resolved[$key] = $stored[$key] ?? $definition['default'];
         }
 
@@ -150,6 +179,21 @@ class Setting extends Model
         $definitions = self::definitions();
 
         return $definitions[$key]['default'] ?? '';
+    }
+
+    private static function isMailKey(string $key): bool
+    {
+        return array_key_exists($key, self::$mailEnvMap);
+    }
+
+    private static function mailValue(string $key, string $fallback): string
+    {
+        $envKey = self::$mailEnvMap[$key] ?? null;
+        if ($envKey === null) {
+            return $fallback;
+        }
+
+        return (string) env($envKey, $fallback);
     }
 
     public static function currencyPrefix(): string
@@ -185,7 +229,7 @@ class Setting extends Model
     {
         $formatted = number_format($amount, 2, '.', ',');
 
-        return self::currencyPrefixFor($currency ?? self::getValue('default_currency')) . $formatted;
+        return self::currencyPrefixFor($currency ?? self::getValue('default_currency')) . ' '. $formatted;
     }
 
     /**

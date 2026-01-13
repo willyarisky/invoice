@@ -5,6 +5,7 @@ namespace App\Controllers\Auth;
 use App\Models\EmailVerificationToken;
 use App\Models\User;
 use App\Services\Auth\EmailVerificationService;
+use App\Services\ViewData;
 use Zero\Lib\Http\Request;
 use Zero\Lib\Http\Response;
 use Zero\Lib\Session;
@@ -14,6 +15,7 @@ class EmailVerificationController
 {
     public function notice(): Response
     {
+        $layout = ViewData::appLayout();
         $status = Session::get('status');
         $errors = Session::get('verification_errors') ?? [];
         $old = Session::get('verification_old') ?? [];
@@ -22,7 +24,11 @@ class EmailVerificationController
         Session::remove('verification_errors');
         Session::remove('verification_old');
 
-        return view('auth/verify-email', compact('status', 'errors', 'old'));
+        return view('auth/verify-email', array_merge($layout, [
+            'status' => $status,
+            'errors' => $errors,
+            'old' => $old,
+        ]));
     }
 
     public function verify(Request $request, string $token): Response
@@ -41,8 +47,8 @@ class EmailVerificationController
         $user = User::query()->where('email', $email)->first();
 
         if (! $user instanceof User) {
-            Session::set('status', 'We could not find a user with that email. Please register first.');
-            return Response::redirect('/register');
+            Session::set('status', 'We could not find a user with that email. Please contact your administrator.');
+            return Response::redirect('/login');
         }
 
         if ($user->isEmailVerified()) {

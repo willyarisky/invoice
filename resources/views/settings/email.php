@@ -2,24 +2,28 @@
 
 @section('content')
 <div class="grid gap-8 lg:grid-cols-[240px_1fr]">
-    @include('settings/partials/sidebar', ['active' => 'email'])
+    @include('settings/partials/sidebar', [
+        'settingsActive' => $settingsActive,
+        'settingsLinkBase' => $settingsLinkBase,
+        'isAdmin' => $isAdmin,
+    ])
 
     <div class="space-y-6">
-        <div class="rounded-lg border border-stone-200 bg-white px-6 py-6 shadow-sm">
-            <div>
-                <p class="text-xs uppercase tracking-widest text-stone-400">Settings</p>
-                <p class="mt-2 text-2xl font-semibold text-stone-900">Email Settings</p>
-                <p class="mt-2 text-sm text-stone-500">Configure the sender and SMTP connection for outgoing mail.</p>
-            </div>
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-stone-900">Email Settings</h1>
+        </div>
+        </div>
+        <div class="rounded-xl border border-stone-200 bg-white px-6 py-6 shadow-sm">
 
             @if (!empty($status ?? ''))
-                <div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                     {{ $status ?? '' }}
                 </div>
             @endif
 
             @if (!empty($errors ?? []))
-                <div class="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     <p class="font-semibold">Please review the highlighted fields.</p>
                 </div>
             @endif
@@ -86,6 +90,15 @@
                     <input type="password" name="mail_password" value="{{ $values['mail_password'] ?? '' }}" class="mt-1 border border-stone-200 bg-white px-4 py-2 text-stone-700">
                     @if (isset($errors['mail_password']))
                         <span class="mt-1 text-xs text-rose-500">{{ $errors['mail_password'] ?? '' }}</span>
+                    @endif
+                </label>
+
+                <label class="flex flex-col text-sm font-medium text-stone-700 lg:col-span-2">
+                    Default invoice email message
+                    <textarea name="invoice_email_message" rows="6" class="mt-1 border border-stone-200 bg-white px-4 py-2 text-stone-700">{{ $values['invoice_email_message'] ?? '' }}</textarea>
+                    <span class="mt-1 text-xs text-stone-500">Available tokens: {client_name}, {invoice_no}, {total}, {due_date}, {company_name}</span>
+                    @if (isset($errors['invoice_email_message']))
+                        <span class="mt-1 text-xs text-rose-500">{{ $errors['invoice_email_message'] ?? '' }}</span>
                     @endif
                 </label>
 

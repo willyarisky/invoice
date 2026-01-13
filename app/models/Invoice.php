@@ -16,6 +16,11 @@ class Invoice extends Model
         'status',
         'currency',
         'total',
+        'tax_id',
+        'tax_rate',
+        'tax_amount',
+        'notes',
+        'public_uuid',
     ];
 
     protected bool $timestamps = true;

@@ -42,6 +42,11 @@ final class Message
      */
     private array $headers = [];
 
+    /**
+     * @var array<int, array{filename: string, content: string, content_type: string}>
+     */
+    private array $attachments = [];
+
     public function __construct(array $defaultFrom = [])
     {
         if (! empty($defaultFrom['address'])) {
@@ -132,6 +137,28 @@ final class Message
         return $this;
     }
 
+    public function attach(string $filename, string $content, string $contentType = 'application/octet-stream'): self
+    {
+        $safeName = $this->sanitizeAttachmentName($filename);
+        $safeType = $this->sanitizeHeaderValue($contentType);
+
+        if ($safeName === '') {
+            $safeName = 'attachment';
+        }
+
+        if ($safeType === '') {
+            $safeType = 'application/octet-stream';
+        }
+
+        $this->attachments[] = [
+            'filename' => $safeName,
+            'content' => $content,
+            'content_type' => $safeType,
+        ];
+
+        return $this;
+    }
+
     /**
      * @return array{address: string, name: string|null}|null
      */
@@ -188,6 +215,14 @@ final class Message
     }
 
     /**
+     * @return array<int, array{filename: string, content: string, content_type: string}>
+     */
+    public function getAttachments(): array
+    {
+        return $this->attachments;
+    }
+
+    /**
      * @return array<string, string>
      */
     public function getCustomHeaders(): array
@@ -213,16 +248,47 @@ final class Message
 
     public function toMimeString(): string
     {
-        $lines = $this->buildHeaderLines();
-        $body = $this->body === '' ? '' : $this->body;
+        if (empty($this->attachments)) {
+            $lines = $this->buildHeaderLines();
+            $body = $this->body === '' ? '' : $this->body;
 
-        return implode("\r\n", $lines) . "\r\n\r\n" . $body;
+            return implode("\r\n", $lines) . "\r\n\r\n" . $body;
+        }
+
+        $boundary = $this->generateBoundary();
+        $lines = $this->buildHeaderLines('multipart/mixed; boundary="' . $boundary . '"');
+
+        $parts = [];
+
+        $bodyPart = [];
+        $bodyPart[] = '--' . $boundary;
+        $bodyPart[] = 'Content-Type: ' . $this->contentType;
+        $bodyPart[] = 'Content-Transfer-Encoding: 8bit';
+        $bodyPart[] = '';
+        $bodyPart[] = $this->body;
+        $parts[] = implode("\r\n", $bodyPart);
+
+        foreach ($this->attachments as $attachment) {
+            $encoded = chunk_split(base64_encode($attachment['content']), 76, "\r\n");
+            $attachmentPart = [];
+            $attachmentPart[] = '--' . $boundary;
+            $attachmentPart[] = 'Content-Type: ' . $attachment['content_type'] . '; name="' . $attachment['filename'] . '"';
+            $attachmentPart[] = 'Content-Transfer-Encoding: base64';
+            $attachmentPart[] = 'Content-Disposition: attachment; filename="' . $attachment['filename'] . '"';
+            $attachmentPart[] = '';
+            $attachmentPart[] = rtrim($encoded, "\r\n");
+            $parts[] = implode("\r\n", $attachmentPart);
+        }
+
+        $parts[] = '--' . $boundary . '--';
+
+        return implode("\r\n", $lines) . "\r\n\r\n" . implode("\r\n", $parts);
     }
 
     /**
      * @return array<int, string>
      */
-    private function buildHeaderLines(): array
+    private function buildHeaderLines(?string $contentType = null): array
     {
         $lines = [];
         $lines[] = 'Date: ' . $this->formatDate();
@@ -248,7 +314,7 @@ final class Message
         }
 
         $lines[] = 'MIME-Version: 1.0';
-        $lines[] = 'Content-Type: ' . $this->contentType;
+        $lines[] = 'Content-Type: ' . ($contentType ?? $this->contentType);
         $lines[] = 'Content-Transfer-Encoding: 8bit';
 
         foreach ($this->headers as $name => $value) {
@@ -289,6 +355,22 @@ final class Message
     private function sanitizeHeaderValue(string $value): string
     {
         return trim(preg_replace('/[\r\n]+/', ' ', $value));
+    }
+
+    private function sanitizeAttachmentName(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('/[\r\n]+/', '', $value);
+        $value = trim(str_replace('"', '', $value));
+
+        return $value;
+    }
+
+    private function generateBoundary(): string
+    {
+        $random = bin2hex(random_bytes(16));
+
+        return '=_ZeroMail_' . $random;
     }
 
     private function normalizeLineEndings(string $value): string

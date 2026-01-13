@@ -4,6 +4,7 @@ namespace App\Controllers\Auth;
 
 use App\Models\User;
 use App\Services\Auth\EmailVerificationService;
+use App\Services\ViewData;
 use Zero\Lib\Crypto;
 use Zero\Lib\Http\Request;
 use Zero\Lib\Http\Response;
@@ -14,6 +15,7 @@ class RegisterController
 {
     public function show(): Response
     {
+        $layout = ViewData::authLayout();
         $status = Session::get('status');
         $errors = Session::get('register_errors') ?? [];
         $old = Session::get('register_old') ?? [];
@@ -22,7 +24,11 @@ class RegisterController
         Session::remove('register_errors');
         Session::remove('register_old');
 
-        return view('auth/register', compact('status', 'errors', 'old'));
+        return view('auth/register', array_merge($layout, [
+            'status' => $status,
+            'errors' => $errors,
+            'old' => $old,
+        ]));
     }
 
     public function store(Request $request): Response

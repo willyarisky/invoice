@@ -18,7 +18,12 @@
         },
       }
     </script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+      [x-cloak] {
+        display: none !important;
+      }
+
       button,
       input,
       select,
@@ -26,7 +31,7 @@
         border-radius: 0.5rem !important;
       }
 
-      a.rounded-lg {
+      a.rounded-xl {
         border-radius: 0.5rem !important;
       }
     </style>

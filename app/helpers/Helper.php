@@ -16,7 +16,7 @@ class Helper
     public function boot(): void
     {
         $this->register([
-            // \App\Helpers\ExampleHelper::class
+            \App\Helpers\RenderPdf::class,
         ]);
     }
 }
