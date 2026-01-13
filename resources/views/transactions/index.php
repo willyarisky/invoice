@@ -22,21 +22,21 @@
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
-            <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-widest text-stone-500">
+            <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
                 <tr>
                     <th class="px-4 py-3">Date</th>
                     <th class="px-4 py-3">Type</th>
                     <th class="px-4 py-3">Source</th>
                     <th class="px-4 py-3">Vendor</th>
                     <th class="px-4 py-3 text-right">Amount</th>
-                    <th class="px-4 py-3 text-right">Details</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100">
                 @foreach ($transactions as $transaction)
-                    <tr>
+                    <tr class="hover:bg-stone-50" onclick="window.location='{{ route('transactions.show', ['transaction' => $transaction['id']]) }}'" style="cursor: pointer;">
                         <td class="px-4 py-3">{{ $transaction['date'] ?? '' }}</td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold {{ $transaction['type_badge_class'] ?? '' }}">
@@ -45,7 +45,7 @@
                         </td>
                         <td class="px-4 py-3">
                             @if (($transaction['source'] ?? '') === 'invoice' && !empty($transaction['invoice_id']))
-                                <a href="{{ route('invoices.show', ['invoice' => $transaction['invoice_id']]) }}" class="font-semibold text-stone-700 hover:text-stone-900">
+                                <a href="{{ route('invoices.show', ['invoice' => $transaction['invoice_id']]) }}" class="font-semibold text-stone-700 hover:text-stone-900" onclick="event.stopPropagation();">
                                     Invoice {{ $transaction['invoice_no'] ?? '' }}
                                 </a>
                                 <p class="text-xs text-stone-500">Client: {{ $transaction['client_name'] ?? '—' }}</p>
@@ -58,14 +58,24 @@
                         </td>
                         <td class="px-4 py-3">{{ $transaction['vendor_name'] ?? '—' }}</td>
                         <td class="px-4 py-3 text-right font-semibold {{ $transaction['amount_class'] ?? '' }}">{{ $transaction['amount_label'] ?? '' }}</td>
-                        <td class="px-4 py-3 text-right">
-                            <div class="flex items-center justify-end gap-3">
-                                <a href="{{ route('transactions.show', ['transaction' => $transaction['id']]) }}" class="text-sm font-semibold text-stone-600 hover:text-stone-900">
-                                    View
-                                </a>
-                                <a href="{{ route('transactions.edit', ['transaction' => $transaction['id']]) }}" class="text-sm font-semibold text-stone-600 hover:text-stone-900">
-                                    Edit
-                                </a>
+                        <td class="px-4 py-3 text-right" onclick="event.stopPropagation();">
+                            <div class="relative inline-flex" x-data="{ open: false }">
+                                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50" x-on:click="open = !open" x-bind:aria-expanded="open.toString()" aria-haspopup="true">
+                                    <span class="sr-only">Open actions</span>
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <circle cx="10" cy="4" r="1.5"></circle>
+                                        <circle cx="10" cy="10" r="1.5"></circle>
+                                        <circle cx="10" cy="16" r="1.5"></circle>
+                                    </svg>
+                                </button>
+                                <div class="absolute right-0 z-10 mt-2 w-44 rounded-xl border border-stone-200 bg-white py-2 text-sm text-stone-700 shadow-lg" x-cloak x-show="open" x-on:click.outside="open = false">
+                                    <a href="{{ route('transactions.show', ['transaction' => $transaction['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        View
+                                    </a>
+                                    <a href="{{ route('transactions.edit', ['transaction' => $transaction['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        Edit
+                                    </a>
+                                </div>
                             </div>
                         </td>
                     </tr>

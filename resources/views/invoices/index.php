@@ -17,9 +17,9 @@
             <a href="{{ route('invoices.index') }}" class="font-semibold text-stone-600 hover:text-stone-900">Clear filter</a>
         </div>
     @endif
-    <div class="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-stone-100" id="invoice-table">
-            <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+            <thead class="text-left text-xs font-semibold uppercase tracking-wider text-stone-500 rounded-t-xl">
                 <tr>
                     <th class="px-4 py-3">Invoice</th>
                     <th class="px-4 py-3">Client</th>
@@ -27,6 +27,7 @@
                     <th class="px-4 py-3">Due</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3 text-right">Total</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100 text-sm text-stone-700">
@@ -34,7 +35,7 @@
                     <tr class="invoice-row hover:bg-stone-50" x-show="term === '' || $el.dataset.search.includes(term)" data-search="{{ $invoice['search'] ?? '' }}" onclick="window.location='{{ $invoice['show_url'] ?? '#' }}'" style="cursor: pointer;">
                         <td class="px-4 py-3">
                             <div class="flex flex-col gap-1">
-                                <a href="{{ $invoice['show_url'] ?? '#' }}" class="font-semibold text-stone-900 hover:text-stone-500">
+                                <a href="{{ $invoice['show_url'] ?? '#' }}" class="font-semibold text-stone-900 hover:text-stone-500" onclick="event.stopPropagation();">
                                     {{ $invoice['invoice_no'] ?? '—' }}
                                 </a>
                             </div>
@@ -48,10 +49,33 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right font-semibold">{{ $invoice['total_label'] ?? '' }}</td>
+                        <td class="px-4 py-3 text-right" onclick="event.stopPropagation();">
+                            <div class="relative inline-flex" x-data="{ open: false }">
+                                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50" x-on:click="open = !open" x-bind:aria-expanded="open.toString()" aria-haspopup="true">
+                                    <span class="sr-only">Open actions</span>
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <circle cx="10" cy="4" r="1.5"></circle>
+                                        <circle cx="10" cy="10" r="1.5"></circle>
+                                        <circle cx="10" cy="16" r="1.5"></circle>
+                                    </svg>
+                                </button>
+                                <div class="absolute right-0 z-10 mt-2 w-44 rounded-xl border border-stone-200 bg-white py-2 text-sm text-stone-700 shadow-lg" x-cloak x-show="open" x-on:click.outside="open = false">
+                                    <a href="{{ $invoice['show_url'] ?? '#' }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        View
+                                    </a>
+                                    <a href="{{ route('invoices.edit', ['invoice' => $invoice['id'] ?? 0]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        Edit
+                                    </a>
+                                    <a href="{{ route('invoices.download', ['invoice' => $invoice['id'] ?? 0]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-6 text-center text-sm text-stone-500">No invoices just yet. Create one to get started!</td>
+                        <td colspan="7" class="px-4 py-6 text-center text-sm text-stone-500">No invoices just yet. Create one to get started!</td>
                     </tr>
                 @endforeach
             </tbody>

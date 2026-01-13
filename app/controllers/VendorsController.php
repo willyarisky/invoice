@@ -19,10 +19,24 @@ class VendorsController
 
         Session::remove('vendor_status');
 
-        $vendors = DBML::table('vendors')
-            ->select('id', 'name', 'email', 'phone', 'address')
-            ->orderBy('name')
+        $vendors = DBML::table('vendors as v')
+            ->select(
+                'v.id',
+                'v.name',
+                'v.email',
+                'v.phone',
+                'v.address',
+                DBML::raw("COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_spent")
+            )
+            ->leftJoin('transactions as t', 't.vendor_id', '=', 'v.id')
+            ->groupBy('v.id', 'v.name', 'v.email', 'v.phone', 'v.address')
+            ->orderBy('v.name')
             ->get();
+
+        $defaultCurrency = Setting::getValue('default_currency');
+        foreach ($vendors as $index => $vendor) {
+            $vendors[$index]['total_spent_label'] = Setting::formatMoney((float) ($vendor['total_spent'] ?? 0), $defaultCurrency);
+        }
 
         return view('vendors/index', array_merge($layout, [
             'vendors' => $vendors,
@@ -43,6 +57,43 @@ class VendorsController
         return view('vendors/create', array_merge($layout, [
             'errors' => $errors,
             'old' => $old,
+        ]));
+    }
+
+    public function edit(int $vendor)
+    {
+        $layout = ViewData::appLayout();
+        $errors = Session::get('vendor_edit_errors') ?? [];
+        $old = Session::get('vendor_edit_old') ?? [];
+
+        Session::remove('vendor_edit_errors');
+        Session::remove('vendor_edit_old');
+
+        $record = DBML::table('vendors')
+            ->select('id', 'name', 'email', 'phone', 'address')
+            ->where('id', $vendor)
+            ->first();
+
+        if ($record === null) {
+            Session::set('vendor_status', 'Vendor not found.');
+            return Response::redirect('/vendors');
+        }
+
+        $values = [
+            'name' => (string) ($record['name'] ?? ''),
+            'email' => (string) ($record['email'] ?? ''),
+            'phone' => (string) ($record['phone'] ?? ''),
+            'address' => (string) ($record['address'] ?? ''),
+        ];
+
+        if ($old !== []) {
+            $values = array_merge($values, $old);
+        }
+
+        return view('vendors/edit', array_merge($layout, [
+            'vendor' => $record,
+            'errors' => $errors,
+            'values' => $values,
         ]));
     }
 
@@ -94,6 +145,57 @@ class VendorsController
         ]);
 
         Session::set('vendor_status', 'Vendor added successfully.');
+
+        return Response::redirect('/vendors');
+    }
+
+    public function update(int $vendor, Request $request): Response
+    {
+        Session::remove('vendor_status');
+        Session::remove('vendor_edit_errors');
+        Session::remove('vendor_edit_old');
+
+        try {
+            $data = $request->validate([
+                'name' => ['required', 'string', 'min:2'],
+                'email' => ['string'],
+                'phone' => ['string', 'max:40'],
+                'address' => ['string'],
+            ]);
+        } catch (ValidationException $exception) {
+            $messages = array_map(
+                static fn (array $errors): string => (string) ($errors[0] ?? ''),
+                $exception->errors()
+            );
+
+            Session::set('vendor_edit_errors', $messages);
+            Session::set('vendor_edit_old', $request->all());
+
+            return Response::redirect('/vendors/' . $vendor . '/edit');
+        }
+
+        $email = strtolower(trim((string) ($data['email'] ?? '')));
+
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::set('vendor_edit_errors', ['email' => 'Please enter a valid email address.']);
+            Session::set('vendor_edit_old', $request->all());
+
+            return Response::redirect('/vendors/' . $vendor . '/edit');
+        }
+
+        $timestamp = date('Y-m-d H:i:s');
+        $phone = trim((string) ($data['phone'] ?? ''));
+        $address = trim((string) ($data['address'] ?? ''));
+
+        DBML::table('vendors')->where('id', $vendor)->update([
+            'name' => trim((string) $data['name']),
+            'email' => $email === '' ? null : $email,
+            'phone' => $phone === '' ? null : $phone,
+            'address' => $address === '' ? null : $address,
+            'updated_at' => $timestamp,
+        ]);
+
+        Session::set('vendor_status', 'Vendor updated successfully.');
 
         return Response::redirect('/vendors');
     }

@@ -87,7 +87,7 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
-                    <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-widest text-stone-500">
+                    <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
                         <tr>
                             <th class="px-6 py-3">Name</th>
                             <th class="px-6 py-3">Email</th>

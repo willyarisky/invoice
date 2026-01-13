@@ -22,18 +22,8 @@
 
     <div class="grid gap-6 lg:grid-cols-2">
         <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-semibold text-stone-900">Invoices</p>
-                    <p class="mt-1 text-xs text-stone-400">Status snapshot for the selected range</p>
-                </div>
-                <div class="flex items-center gap-4 text-xs text-stone-500">
-                    <a href="{{ route('invoices.index') }}" class="font-semibold text-stone-600 hover:text-stone-900">View Report</a>
-                    <button type="button" class="text-stone-400">...</button>
-                </div>
-            </div>
-            <div class="mt-4 border-t border-stone-100 pt-4">
-                <p class="text-sm text-stone-500">Total invoices: <span class="font-semibold text-stone-900">{{ $invoiceCountTotal ?? 0 }}</span></p>
+            <div>
+                <p class="text-lg font-semibold text-stone-900">Total invoices: <span class="font-semibold text-stone-900">{{ $invoiceCountTotal ?? 0 }}</span></p>
                 <div class="mt-3 h-2 rounded-full bg-stone-200">
                     <div class="h-2 rounded-full bg-emerald-500" style="width: {{ $invoiceCountProgress ?? 0 }}%"></div>
                 </div>
@@ -55,18 +45,8 @@
         </div>
 
         <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-semibold text-stone-900">Invoice Value</p>
-                    <p class="mt-1 text-xs text-stone-400">Totals by status for the selected range</p>
-                </div>
-                <div class="flex items-center gap-4 text-xs text-stone-500">
-                    <a href="{{ route('invoices.index') }}" class="font-semibold text-stone-600 hover:text-stone-900">View Report</a>
-                    <button type="button" class="text-stone-400">...</button>
-                </div>
-            </div>
-            <div class="mt-4 border-t border-stone-100 pt-4">
-                <p class="text-sm text-stone-500">Total value: <span class="font-semibold text-stone-900">{{ $invoiceAmountTotalLabel ?? '' }}</span></p>
+            <div>
+                <p class="text-lg font-semibold text-stone-900">Total value: <span class="font-semibold text-stone-900">{{ $invoiceAmountTotalLabel ?? '' }}</span></p>
                 <div class="mt-3 h-2 rounded-full bg-stone-200">
                     <div class="h-2 rounded-full bg-indigo-500" style="width: {{ $invoiceAmountProgress ?? 0 }}%"></div>
                 </div>
@@ -95,7 +75,6 @@
                 <p class="text-xs text-stone-400">Cash coming in and going out of your business</p>
             </div>
             <div class="flex items-center gap-4 text-xs text-stone-500">
-                <a href="{{ route('transactions.index') }}" class="font-semibold text-stone-600 hover:text-stone-900">View Report</a>
                 <button type="button" class="text-stone-400">...</button>
             </div>
         </div>
@@ -150,40 +129,5 @@
         </div>
     </div>
 
-    <div class="rounded-2xl border border-stone-200 bg-white px-6 py-6 shadow-sm">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-                <p class="text-lg font-semibold text-stone-900">Profit &amp; Loss</p>
-                <p class="text-xs text-stone-400">Income and expenses including unpaid invoices and bills</p>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-stone-500">
-                <a href="{{ route('transactions.index') }}" class="font-semibold text-stone-600 hover:text-stone-900">View Report</a>
-                <button type="button" class="text-stone-400">...</button>
-            </div>
-        </div>
-        <div class="mt-5 border-t border-stone-100 pt-5">
-            <div class="flex flex-wrap items-center gap-4 text-xs text-stone-500">
-                <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Income</span>
-                <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-rose-400"></span>Expense</span>
-            </div>
-            <div class="mt-4 rounded-xl border border-stone-100 bg-stone-50/60 p-4">
-                <svg viewBox="0 0 {{ $profitLossChart['width'] ?? 0 }} {{ $profitLossChart['height'] ?? 0 }}" class="h-52 w-full">
-                    <line x1="0" y1="{{ $profitLossChart['height'] ?? 0 }}" x2="{{ $profitLossChart['width'] ?? 0 }}" y2="{{ $profitLossChart['height'] ?? 0 }}" stroke="#d6d3d1" stroke-width="1" />
-                    <line x1="0" y1="{{ ($profitLossChart['height'] ?? 0) * 0.5 }}" x2="{{ $profitLossChart['width'] ?? 0 }}" y2="{{ ($profitLossChart['height'] ?? 0) * 0.5 }}" stroke="#e7e5e4" stroke-width="1" />
-                    <line x1="0" y1="0" x2="{{ $profitLossChart['width'] ?? 0 }}" y2="0" stroke="#e7e5e4" stroke-width="1" />
-
-                    @foreach (($profitLossChart['bars'] ?? []) as $bar)
-                        <rect x="{{ $bar['income']['x'] ?? 0 }}" y="{{ $bar['income']['y'] ?? 0 }}" width="{{ $profitLossChart['barWidth'] ?? 0 }}" height="{{ $bar['income']['height'] ?? 0 }}" fill="#4ade80" rx="2"></rect>
-                        <rect x="{{ $bar['expense']['x'] ?? 0 }}" y="{{ $bar['expense']['y'] ?? 0 }}" width="{{ $profitLossChart['barWidth'] ?? 0 }}" height="{{ $bar['expense']['height'] ?? 0 }}" fill="#fb7185" rx="2"></rect>
-                    @endforeach
-                </svg>
-            </div>
-            <div class="mt-2 flex items-center justify-between text-xs text-stone-400">
-                @foreach (($cashFlowLabels ?? []) as $label)
-                    <span>{{ $label }}</span>
-                @endforeach
-            </div>
-        </div>
-    </div>
 </div>
 @endsection

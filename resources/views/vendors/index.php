@@ -22,30 +22,52 @@
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
-            <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-widest text-stone-500">
+            <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
                 <tr>
                     <th class="px-4 py-3">Vendor</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Phone</th>
+                    <th class="px-4 py-3 text-right">Total spent</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-stone-100">
                 @foreach ($vendors as $vendor)
-                    <tr>
+                    <tr class="hover:bg-stone-50" onclick="window.location='{{ route('vendors.show', ['vendor' => $vendor['id']]) }}'" style="cursor: pointer;">
                         <td class="px-4 py-3">
-                            <a href="{{ route('vendors.show', ['vendor' => $vendor['id']]) }}" class="font-semibold text-stone-900 hover:text-stone-500">
+                            <a href="{{ route('vendors.show', ['vendor' => $vendor['id']]) }}" class="font-semibold text-stone-900 hover:text-stone-500" onclick="event.stopPropagation();">
                                 {{ $vendor['name'] ?? 'Vendor' }}
                             </a>
-                            <p class="text-xs text-stone-500">{{ $vendor['address'] ?? 'No address on file' }}</p>
                         </td>
                         <td class="px-4 py-3">{{ $vendor['email'] ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $vendor['phone'] ?? '—' }}</td>
+                        <td class="px-4 py-3 text-right font-semibold">{{ $vendor['total_spent_label'] ?? '' }}</td>
+                        <td class="px-4 py-3 text-right" onclick="event.stopPropagation();">
+                            <div class="relative inline-flex" x-data="{ open: false }">
+                                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50" x-on:click="open = !open" x-bind:aria-expanded="open.toString()" aria-haspopup="true">
+                                    <span class="sr-only">Open actions</span>
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <circle cx="10" cy="4" r="1.5"></circle>
+                                        <circle cx="10" cy="10" r="1.5"></circle>
+                                        <circle cx="10" cy="16" r="1.5"></circle>
+                                    </svg>
+                                </button>
+                                <div class="absolute right-0 z-10 mt-2 w-44 rounded-xl border border-stone-200 bg-white py-2 text-sm text-stone-700 shadow-lg" x-cloak x-show="open" x-on:click.outside="open = false">
+                                    <a href="{{ route('vendors.show', ['vendor' => $vendor['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        View
+                                    </a>
+                                    <a href="{{ route('vendors.edit', ['vendor' => $vendor['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="px-4 py-6 text-center text-stone-500">Add a vendor to track expenses.</td>
+                        <td colspan="5" class="px-4 py-6 text-center text-stone-500">Add a vendor to track expenses.</td>
                     </tr>
                 @endforeach
             </tbody>

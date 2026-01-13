@@ -26,15 +26,11 @@
         </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[220px_1fr]">
+    <div class="grid items-start gap-6 lg:grid-cols-[220px_1fr]">
         <div class="space-y-6">
             <div class="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
                 <p class="text-xs uppercase tracking-widest text-stone-400">Address</p>
                 <p class="mt-2 text-sm text-stone-700 whitespace-pre-line">{{ $client['address'] ?? 'No mailing address' }}</p>
-            </div>
-            <div class="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
-                <p class="text-xs uppercase tracking-widest text-stone-400">Client portal</p>
-                <p class="mt-2 text-sm text-stone-500">Not configured</p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
                 <p class="text-xs uppercase tracking-widest text-stone-400">Email</p>
@@ -75,44 +71,40 @@
             </div>
 
             <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
-                <div class="flex items-center gap-6 border-b border-stone-100 px-6 py-4 text-sm">
-                    <span class="border-b-2 border-stone-900 pb-2 font-semibold text-stone-900">Invoices</span>
-                    <span class="pb-2 text-stone-400">Transactions</span>
-                </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
-                        <thead class="bg-stone-50 text-left text-xs font-semibold uppercase tracking-widest text-stone-500">
+                    <table class="min-w-full divide-y divide-stone-100">
+                        <thead class="text-left text-xs font-semibold uppercase tracking-wider text-stone-500 rounded-t-xl">
                             <tr>
-                                <th class="px-6 py-3">Due date</th>
-                                <th class="px-6 py-3">Status</th>
-                                <th class="px-6 py-3">Invoice</th>
-                                <th class="px-6 py-3 text-right">Amount</th>
+                                <th class="px-4 py-3">Due date</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Invoice</th>
+                                <th class="px-4 py-3 text-right">Amount</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-stone-100">
+                        <tbody class="divide-y divide-stone-100 text-sm text-stone-700">
                             @foreach ($invoiceRows as $invoice)
-                                <tr>
-                                    <td class="px-6 py-3">
+                                <tr class="invoice-row hover:bg-stone-50" onclick="window.location='{{ route('invoices.show', ['invoice' => $invoice['id']]) }}'" style="cursor: pointer;">
+                                    <td class="px-4 py-3">
                                         <p class="font-semibold text-stone-900">{{ $invoice['due_date'] ?? '—' }}</p>
                                         <p class="text-xs text-stone-500">Invoice date {{ $invoice['date'] ?? '—' }}</p>
                                     </td>
-                                    <td class="px-6 py-3">
+                                    <td class="px-4 py-3">
                                         <span class="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold {{ $invoice['badge_class'] ?? '' }}">
                                             {{ $invoice['status_label'] ?? '' }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-3">
-                                        <a href="{{ route('invoices.show', ['invoice' => $invoice['id']]) }}" class="font-semibold text-stone-900 hover:text-stone-500">
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('invoices.show', ['invoice' => $invoice['id']]) }}" class="font-semibold text-stone-900 hover:text-stone-500" onclick="event.stopPropagation();">
                                             {{ $invoice['invoice_no'] ?? '—' }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-3 text-right font-semibold">
+                                    <td class="px-4 py-3 text-right font-semibold">
                                         {{ $invoice['total_label'] ?? '' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-6 text-center text-stone-500">No invoices for this client yet.</td>
+                                    <td colspan="4" class="px-4 py-6 text-center text-stone-500">No invoices for this client yet.</td>
                                 </tr>
                             @endforeach
                         </tbody>

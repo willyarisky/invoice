@@ -46,7 +46,7 @@
 
     <div class="mt-2" id="invoice-items">
         <table class="min-w-full text-sm text-stone-600">
-            <thead class="uppercase font-bold text-stone-900 border-b border-b-2 rounded-top-lg">
+            <thead class="uppercase font-bold text-stone-900 border-b border-b-2 rounded-top-lg rounded-t-xl">
                 <tr>
                     <th class="py-3 text-left font-semibold">Items</th>
                     <th class="py-3 text-center font-semibold">Quantity</th>

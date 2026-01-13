@@ -173,30 +173,6 @@ class HomeController
             $cashFlowLabels[] = (string) ($cashFlowSeries[$labelIndex]['label'] ?? '');
         }
 
-        $profitLossMax = 1.0;
-        foreach ($cashFlowSeries as $point) {
-            $profitLossMax = max($profitLossMax, (float) ($point['income'] ?? 0), (float) ($point['expense'] ?? 0));
-        }
-
-        $profitLossBars = [];
-        foreach ($cashFlowSeries as $index => $point) {
-            $incomeHeight = ((float) ($point['income'] ?? 0) / $profitLossMax) * $chartHeight;
-            $expenseHeight = ((float) ($point['expense'] ?? 0) / $profitLossMax) * $chartHeight;
-            $barCenter = $pointCount > 0 ? $barSlot * $index + $barSlot / 2 : $chartWidth / 2;
-            $profitLossBars[] = [
-                'income' => [
-                    'x' => $barCenter - $barWidth - ($barGap / 2),
-                    'y' => $chartHeight - $incomeHeight,
-                    'height' => $incomeHeight,
-                ],
-                'expense' => [
-                    'x' => $barCenter + ($barGap / 2),
-                    'y' => $chartHeight - $expenseHeight,
-                    'height' => $expenseHeight,
-                ],
-            ];
-        }
-
         $cashFlowTotalsLabels = [
             'income' => Setting::formatMoney((float) ($cashFlowTotals['income'] ?? 0)),
             'expense' => Setting::formatMoney((float) ($cashFlowTotals['expense'] ?? 0)),
@@ -229,12 +205,6 @@ class HomeController
                 'bars' => $bars,
                 'profitPolyline' => implode(' ', $profitPolyline),
                 'profitPoints' => $profitPoints,
-            ],
-            'profitLossChart' => [
-                'width' => $chartWidth,
-                'height' => $chartHeight,
-                'barWidth' => $barWidth,
-                'bars' => $profitLossBars,
             ],
             'cashFlowLabels' => $cashFlowLabels,
             'cashFlowTotalsLabels' => $cashFlowTotalsLabels,

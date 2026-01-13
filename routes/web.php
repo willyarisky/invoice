@@ -47,7 +47,9 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/transactions/{transaction}/update', [TransactionsController::class, 'update'])->name('transactions.update');
     Router::get('/vendors', [VendorsController::class, 'index'])->name('vendors.index');
     Router::get('/vendors/create', [VendorsController::class, 'create'])->name('vendors.create');
+    Router::get('/vendors/{vendor}/edit', [VendorsController::class, 'edit'])->name('vendors.edit');
     Router::post('/vendors', [VendorsController::class, 'store'])->name('vendors.store');
+    Router::post('/vendors/{vendor}/update', [VendorsController::class, 'update'])->name('vendors.update');
     Router::get('/vendors/{vendor}', [VendorsController::class, 'show'])->name('vendors.show');
     Router::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Router::post('/settings/company', [SettingsController::class, 'updateCompany'])->name('settings.company.update');

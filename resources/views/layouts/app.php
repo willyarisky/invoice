@@ -26,15 +26,13 @@
                 </div>
             </div>
         </div>
-        <div class="border-t border-stone-100">
-            <nav class="mx-auto flex w-full max-w-[1200px] gap-6 overflow-x-auto px-6 text-sm text-stone-500">
-                @foreach ($navItems ?? [] as $item)
-                    <a href="{{ $item['href'] ?? '#' }}" class="border-b-2 px-1 py-3 font-medium {{ !empty($item['isActive']) ? 'border-stone-900 text-stone-900' : 'border-transparent hover:border-stone-300 hover:text-stone-800' }}">
-                        {{ $item['label'] ?? '' }}
-                    </a>
-                @endforeach
-            </nav>
-        </div>
+        <nav class="mx-auto flex w-full max-w-[1200px] gap-6 overflow-x-auto px-6 text-sm text-stone-500">
+            @foreach ($navItems ?? [] as $item)
+                <a href="{{ $item['href'] ?? '#' }}" class="border-b-2 px-1 py-3 font-medium {{ !empty($item['isActive']) ? 'border-stone-900 text-stone-900' : 'border-transparent hover:border-stone-300 hover:text-stone-800' }}">
+                    {{ $item['label'] ?? '' }}
+                </a>
+            @endforeach
+        </nav>
     </header>
     <main class="mx-auto w-full max-w-[1200px] px-6 py-6">
         @yield('content')
