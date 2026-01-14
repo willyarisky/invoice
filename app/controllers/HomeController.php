@@ -45,6 +45,10 @@ class HomeController
             ->where('date', '<=', $endDate)
             ->get();
 
+        $expenseCountTotal = 0;
+        $expenseAmountTotal = 0.0;
+        $expenseMaxAmount = 0.0;
+
         foreach ($transactions as $transaction) {
             $monthKey = substr((string) ($transaction['date'] ?? ''), 0, 7);
             if ($monthKey === '' || !isset($series[$monthKey])) {
@@ -58,6 +62,12 @@ class HomeController
                 continue;
             }
             $series[$monthKey]['expense'] += $amount;
+
+            $expenseCountTotal += 1;
+            $expenseAmountTotal += $amount;
+            if ($amount > $expenseMaxAmount) {
+                $expenseMaxAmount = $amount;
+            }
         }
 
         $cashFlowTotals = [
@@ -95,6 +105,16 @@ class HomeController
             'sent' => Setting::formatMoney((float) ($invoiceStatusTotals['sent'] ?? 0)),
             'paid' => Setting::formatMoney((float) ($invoiceStatusTotals['paid'] ?? 0)),
         ];
+
+        $expenseAverage = $expenseCountTotal > 0 ? $expenseAmountTotal / $expenseCountTotal : 0.0;
+        $expenseTotalLabel = Setting::formatMoney($expenseAmountTotal);
+        $expenseAverageLabel = Setting::formatMoney($expenseAverage);
+        $expenseMaxLabel = Setting::formatMoney($expenseMaxAmount);
+        $expenseProgress = 0;
+        $cashFlowTotal = $cashFlowTotals['income'] + $cashFlowTotals['expense'];
+        if ($cashFlowTotal > 0) {
+            $expenseProgress = min(100, (int) round(($cashFlowTotals['expense'] / $cashFlowTotal) * 100));
+        }
 
         $chartWidth = 600;
         $chartHeight = 170;
@@ -191,6 +211,11 @@ class HomeController
             'invoiceCountProgress' => $invoiceCountProgress,
             'invoiceAmountProgress' => $invoiceAmountProgress,
             'invoiceStatusTotalsLabels' => $invoiceStatusTotalsLabels,
+            'expenseCountTotal' => $expenseCountTotal,
+            'expenseTotalLabel' => $expenseTotalLabel,
+            'expenseAverageLabel' => $expenseAverageLabel,
+            'expenseMaxLabel' => $expenseMaxLabel,
+            'expenseProgress' => $expenseProgress,
             'cashFlow' => [
                 'series' => $cashFlowSeries,
                 'totals' => $cashFlowTotals,

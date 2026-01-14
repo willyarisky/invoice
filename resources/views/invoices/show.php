@@ -21,17 +21,27 @@
                     </svg>
                 </button>
                 <div class="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 bg-white py-2 text-sm text-stone-700 shadow-lg" x-cloak x-show="open" x-on:click.outside="open = false">
-                    <form method="POST" action="{{ route('invoices.markSent', ['invoice' => $invoice['id']]) }}">
-                        <button type="submit" class="flex w-full items-center px-4 py-2 text-left font-semibold text-stone-600 hover:bg-stone-50" {{ $status === 'paid' ? 'disabled' : '' }}>
-                            Mark as Sent
+                    @if ($status !== 'sent' && $status !== 'paid')
+                        <form method="POST" action="{{ route('invoices.markSent', ['invoice' => $invoice['id']]) }}">
+                            <button type="submit" class="flex w-full items-center px-4 py-2 text-left font-semibold text-stone-600 hover:bg-stone-50">
+                                Mark as Sent
+                            </button>
+                        </form>
+                    @endif
+                    @if (! $hasPaymentTransaction && $status !== 'paid')
+                        <button type="button" class="flex w-full items-center px-4 py-2 text-left font-semibold text-stone-600 hover:bg-stone-50" x-on:click="paymentModalOpen = true; open = false">
+                            Record payment
                         </button>
-                    </form>
+                    @endif
                     <a href="{{ route('invoices.edit', ['invoice' => $invoice['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50">
                         Edit invoice
                     </a>
                     <a href="{{ route('invoices.duplicate', ['invoice' => $invoice['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50">
                         Duplicate invoice
                     </a>
+                    <button type="button" class="flex w-full items-center px-4 py-2 text-left font-semibold text-stone-600 hover:bg-stone-50" x-on:click="emailModalOpen = true; open = false">
+                        Send invoice to email
+                    </button>
                     <a href="{{ route('invoices.download', ['invoice' => $invoice['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50">
                         Download
                     </a>
@@ -115,7 +125,11 @@
                         <div class="mt-3 space-y-3">
                             @foreach ($timelineItems as $index => $event)
                                 <div class="flex gap-3" x-show="showAll || {{ $index }} < 3">
-                                    <span class="mt-2 h-2 w-2 rounded-full bg-stone-400"></span>
+                                    <span class="text-stone-300">
+                                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <circle cx="10" cy="10" r="5" />
+                                        </svg>
+                                    </span>
                                     <div>
                                         <p class="text-sm font-semibold text-stone-800">{{ $event['summary'] ?? '' }}</p>
                                         @if (!empty($event['detail'] ?? ''))

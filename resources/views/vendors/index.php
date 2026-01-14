@@ -7,9 +7,9 @@
             <h1 class="text-2xl font-semibold text-stone-900">Vendors</h1>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600">
-                {{ $vendorCount ?? 0 }} vendors tracked
-            </div>
+            <form method="GET" action="{{ route('vendors.index') }}" class="flex items-center rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm">
+                <input type="search" name="q" value="{{ $search ?? '' }}" placeholder="Search vendor, email, or phone" class="w-64 bg-transparent text-sm text-stone-600 placeholder:text-stone-400 focus:outline-none">
+            </form>
             <a href="{{ route('vendors.create') }}" class="rounded-xl bg-stone-800 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-700">
                 Add vendor
             </a>

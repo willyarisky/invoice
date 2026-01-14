@@ -596,6 +596,7 @@ class InvoicesController
                 'i.tax_rate',
                 'i.tax_amount',
                 'i.notes',
+                'i.public_uuid',
                 'c.name as customer_name',
                 'c.email as customer_email',
                 'c.address as customer_address',
@@ -694,6 +695,7 @@ class InvoicesController
                 'i.tax_rate',
                 'i.tax_amount',
                 'i.notes',
+                'i.public_uuid',
                 'c.name as customer_name',
                 'c.email as customer_email',
                 'c.address as customer_address',
@@ -708,6 +710,11 @@ class InvoicesController
             Session::set('invoice_email_errors', ['email' => 'Invoice not found.']);
             return Response::redirect('/invoices');
         }
+
+        $record['public_uuid'] = $this->ensureInvoicePublicUuid(
+            $invoice,
+            $record['public_uuid'] ?? null
+        );
 
         $customerEmail = trim((string) ($record['customer_email'] ?? ''));
         if ($customerEmail === '') {
@@ -748,6 +755,11 @@ class InvoicesController
 
         $businessName = Setting::getValue('business_name');
         $brandName = $businessName !== '' ? $businessName : 'Invoice App';
+        $invoiceNo = (string) ($record['invoice_no'] ?? 'Invoice');
+        $due = (string) ($record['due_date'] ?? '');
+        $totalLabel = Setting::formatMoney((float) ($record['total'] ?? 0), $record['currency'] ?? null);
+        $publicUuid = trim((string) ($record['public_uuid'] ?? ''));
+        $publicUrl = $publicUuid !== '' ? route('invoices.public', ['uuid' => $publicUuid]) : '';
         $companyAddress = Setting::getValue('company_address');
         $companyLogo = trim((string) Setting::getValue('company_logo'));
         $companyEmail = Setting::getValue('company_email');
@@ -757,11 +769,20 @@ class InvoicesController
         $companyPhone = Setting::getValue('company_phone');
         $trackingToken = bin2hex(random_bytes(16));
         $trackingUrl = route('invoices.email.open', ['invoice' => $invoice, 'token' => $trackingToken]);
-        $safeBody = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
+        $messageWithTokens = $this->replaceInvoiceEmailTokens(
+            $message,
+            $record,
+            $invoiceNo,
+            $totalLabel,
+            $due,
+            $brandName,
+            $publicUrl
+        );
+        $messageHtml = $this->formatInvoiceEmailBody($messageWithTokens);
         $html = View::render('mail/invoice', [
             'invoice' => $record,
             'items' => $items,
-            'messageHtml' => $safeBody,
+            'messageHtml' => $messageHtml,
             'invoiceUrl' => route('invoices.show', ['invoice' => $invoice]),
             'brandName' => $brandName,
             'companyPhone' => $companyPhone,
@@ -1548,16 +1569,20 @@ class InvoicesController
         $brandName = (string) ($detail['brandName'] ?? 'Invoice App');
         $due = (string) ($detail['due'] ?? $invoice['due_date'] ?? '-');
         $totalLabel = (string) ($detail['totalLabel'] ?? Setting::formatMoney((float) ($invoice['total'] ?? 0), $invoice['currency'] ?? null));
+        $publicUuid = trim((string) ($invoice['public_uuid'] ?? ''));
+        $publicUrl = $publicUuid !== '' ? route('invoices.public', ['uuid' => $publicUuid]) : '';
 
         $defaultSubject = $invoiceNo . ' from ' . $brandName;
         $defaultTemplate = (string) Setting::getValue('invoice_email_message');
-        $defaultMessage = strtr($defaultTemplate, [
-            '{customer_name}' => (string) ($invoice['customer_name'] ?? 'there'),
-            '{invoice_no}' => (string) $invoiceNo,
-            '{total}' => (string) $totalLabel,
-            '{due_date}' => (string) $due,
-            '{company_name}' => (string) $brandName,
-        ]);
+        $defaultMessage = $this->replaceInvoiceEmailTokens(
+            $defaultTemplate,
+            $invoice,
+            $invoiceNo,
+            $totalLabel,
+            $due,
+            $brandName,
+            $publicUrl
+        );
         $emailSubject = $emailOld['subject'] ?? $defaultSubject;
         $emailMessage = $emailOld['message'] ?? $defaultMessage;
         $autoOpenEmailModal = !empty($emailErrors);
@@ -1587,8 +1612,6 @@ class InvoicesController
             ? 'Adjust the payment details for this invoice.'
             : 'This will create a transaction and mark the invoice paid.';
 
-        $publicUuid = trim((string) ($invoice['public_uuid'] ?? ''));
-        $publicUrl = $publicUuid !== '' ? route('invoices.public', ['uuid' => $publicUuid]) : '';
         $publicUrlJson = json_encode($publicUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
         $currentUser = Auth::user();
@@ -1652,6 +1675,45 @@ class InvoicesController
             'lastOpenedEvent' => $lastOpenedEvent,
             'lastStatusEvent' => $lastStatusEvent,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $invoice
+     */
+    private function replaceInvoiceEmailTokens(
+        string $message,
+        array $invoice,
+        string $invoiceNo,
+        string $totalLabel,
+        string $due,
+        string $brandName,
+        string $publicUrl
+    ): string {
+        return strtr($message, [
+            '{customer_name}' => (string) ($invoice['customer_name'] ?? 'there'),
+            '{invoice_no}' => $invoiceNo,
+            '{total}' => $totalLabel,
+            '{due_date}' => $due,
+            '{company_name}' => $brandName,
+            '{invoice_public_url}' => $publicUrl,
+        ]);
+    }
+
+    private function formatInvoiceEmailBody(string $message): string
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return '';
+        }
+
+        $normalized = str_replace(["\r\n", "\r"], "\n", $message);
+        $hasHtml = strip_tags($normalized) !== $normalized;
+
+        if ($hasHtml) {
+            return nl2br($normalized, false);
+        }
+
+        return nl2br(htmlspecialchars($normalized, ENT_QUOTES, 'UTF-8'), false);
     }
 
     private function ensureInvoicePublicUuid(int $invoiceId, ?string $uuid): string

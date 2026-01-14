@@ -7,9 +7,12 @@
             <h1 class="text-2xl font-semibold text-stone-900">Transactions</h1>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600">
-                {{ $transactionCount ?? 0 }} transactions recorded
-            </div>
+            <form method="GET" action="{{ route('transactions.index') }}" class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm">
+                @if (!empty($invoiceId ?? 0))
+                    <input type="hidden" name="invoice_id" value="{{ $invoiceId }}">
+                @endif
+                <input type="search" name="q" value="{{ $search ?? '' }}" placeholder="Search vendor, customer, invoice, or note" class="w-64 bg-transparent text-sm text-stone-600 placeholder:text-stone-400 focus:outline-none">
+            </form>
             <a href="{{ route('transactions.create') }}" class="rounded-xl bg-stone-800 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-700">
                 Add transaction
             </a>

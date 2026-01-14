@@ -114,7 +114,7 @@
                 <label class="flex flex-col text-sm font-medium text-stone-700 lg:col-span-2">
                     Default invoice email message
                     <textarea name="invoice_email_message" rows="6" class="mt-1 border border-stone-200 bg-white px-4 py-2 text-stone-700">{{ $values['invoice_email_message'] ?? '' }}</textarea>
-                    <span class="mt-1 text-xs text-stone-500">Available tokens: {customer_name}, {invoice_no}, {total}, {due_date}, {company_name}</span>
+                    <span class="mt-1 text-xs text-stone-500">Available tokens: {customer_name}, {invoice_no}, {total}, {due_date}, {company_name}, {invoice_public_url}. HTML is supported.</span>
                     @if (isset($errors['invoice_email_message']))
                         <span class="mt-1 text-xs text-rose-500">{{ $errors['invoice_email_message'] ?? '' }}</span>
                     @endif

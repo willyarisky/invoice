@@ -69,6 +69,17 @@ Mail::send(function ($mail) {
 });
 ```
 
+### Attachments
+
+```php
+Mail::send(function ($mail) use ($pdfName, $pdfContents) {
+    $mail->to('customer@example.com')
+         ->subject('Invoice PDF')
+         ->html('<p>Your invoice is attached.</p>')
+         ->attach($pdfName, $pdfContents, 'application/pdf');
+});
+```
+
 ### Raw Convenience Helper
 
 For quick notifications you can skip the callback entirely:
@@ -94,7 +105,7 @@ try {
 ## Limitations & Future Work
 
 - Only the SMTP driver is implemented; queues and local sendmail integrations are on the roadmap.
-- Attachments and multipart/alternative payloads are not yet supported.
+- Multipart/alternative payloads are not yet supported.
 - TLS verification defaults to secure settings—loosen them only for local development.
 
 Contributions are welcome! See `todo.md` for potential enhancements.

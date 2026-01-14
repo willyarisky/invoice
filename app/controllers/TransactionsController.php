@@ -26,6 +26,7 @@ class TransactionsController
         Session::remove('transaction_status');
 
         $invoiceId = (int) $request->input('invoice_id', 0);
+        $search = trim((string) $request->input('q', ''));
         $query = DBML::table('transactions as t')
             ->select(
                 't.id',
@@ -49,6 +50,13 @@ class TransactionsController
 
         if ($invoiceId > 0) {
             $query->where('t.invoice_id', $invoiceId);
+        }
+
+        if ($search !== '') {
+            $query->whereAnyLike(
+                ['t.description', 'v.name', 'i.invoice_no', 'c.name', 't.date'],
+                $search
+            );
         }
 
         $transactions = $query->get();
@@ -84,6 +92,8 @@ class TransactionsController
             'transactions' => $transactionRows,
             'transactionCount' => count($transactionRows),
             'status' => $status,
+            'search' => $search,
+            'invoiceId' => $invoiceId,
         ]));
     }
 

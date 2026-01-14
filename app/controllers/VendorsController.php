@@ -12,13 +12,14 @@ use Zero\Lib\Validation\ValidationException;
 
 class VendorsController
 {
-    public function index()
+    public function index(Request $request)
     {
         $layout = ViewData::appLayout();
         $status = Session::get('vendor_status');
 
         Session::remove('vendor_status');
 
+        $search = trim((string) $request->input('q', ''));
         $vendors = DBML::table('vendors as v')
             ->select(
                 'v.id',
@@ -29,6 +30,9 @@ class VendorsController
                 DBML::raw("COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_spent")
             )
             ->leftJoin('transactions as t', 't.vendor_id', '=', 'v.id')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereAnyLike(['v.name', 'v.email', 'v.phone', 'v.address'], $search);
+            })
             ->groupBy('v.id', 'v.name', 'v.email', 'v.phone', 'v.address')
             ->orderBy('v.name')
             ->get();
@@ -42,6 +46,7 @@ class VendorsController
             'vendors' => $vendors,
             'vendorCount' => count($vendors),
             'status' => $status,
+            'search' => $search,
         ]));
     }
 

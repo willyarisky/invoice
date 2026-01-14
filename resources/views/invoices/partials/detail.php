@@ -54,7 +54,7 @@
                     <th class="py-3 text-right font-semibold">Amount</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-stone-200">
+            <tbody class="divide-y divide-stone-200 border-b border-stone-200">
                 @foreach ($items as $item)
                     <tr>
                         <td class="py-3">
@@ -67,34 +67,35 @@
                 @endforeach
             </tbody>
         </table>
-    </div>
 
-    <div class="mt-4 grid gap-6 pt-6 {{ $hasNotes ? 'md:grid-cols-[1fr_minmax(0,42%)]' : 'md:grid-cols-1' }}">
-        @if ($hasNotes)
-            <div class="md:mt-38 mt-32">
-                <p class="text-sm text-stone-900 font-semibold">Notes</p>
-                <p class="mt-2 text-sm text-stone-500 whitespace-pre-line">{{ $invoiceNotes }}</p>
-            </div>
-        @endif
-        <div class="space-y-2 text-sm text-stone-600 w-full md:justify-self-end">
-            <div class="flex items-center justify-between">
-                <span>Subtotal</span>
-                <span class="font-semibold text-stone-900">{{ $subtotalLabel }}</span>
-            </div>
-            @if ($hasTax)
-                <div class="flex items-center justify-between">
-                    <span>{{ $taxLabel }}</span>
-                    <span class="font-semibold text-stone-900">{{ $taxAmountLabel }}</span>
+        <div class="mt-6 flex justify-end">
+            <div class="w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100 text-sm text-stone-600 md:max-w-[45%]">
+                <div class="flex items-center justify-between px-4 py-2">
+                    <span class="font-semibold text-stone-900">Subtotal</span>
+                    <span class="font-semibold text-stone-900">{{ $subtotalLabel }}</span>
                 </div>
-            @endif
-            <div class="flex items-center justify-between">
-                <span>Amount due</span>
-                <span class="font-semibold text-stone-900">{{ $amountDueLabel }}</span>
-            </div>
-            <div class="flex items-center justify-between border-t border-stone-200 pt-2">
-                <span class="text-sm font-semibold text-stone-900">Total</span>
-                <span class="text-lg font-semibold text-stone-900">{{ $totalLabel }}</span>
+                @if ($hasTax)
+                    <div class="flex items-center justify-between border-t border-stone-200 px-4 py-2">
+                        <span class="font-semibold text-stone-900">{{ $taxLabel }}</span>
+                        <span class="font-semibold text-stone-900">{{ $taxAmountLabel }}</span>
+                    </div>
+                @endif
+                <div class="flex items-center justify-between border-t border-stone-200 px-4 py-2">
+                    <span class="font-semibold text-stone-900">Amount due</span>
+                    <span class="font-semibold text-stone-900">{{ $amountDueLabel }}</span>
+                </div>
+                <div class="flex items-center justify-between border-t border-stone-200 px-4 py-2">
+                    <span class="text-base font-semibold text-stone-900">Total</span>
+                    <span class="text-base font-semibold text-stone-900">{{ $totalLabel }}</span>
+                </div>
             </div>
         </div>
     </div>
+
+    @if ($hasNotes)
+        <div class="mt-8">
+            <p class="text-sm text-stone-900 font-semibold">Notes</p>
+            <p class="mt-2 text-sm text-stone-500 whitespace-pre-line">{{ $invoiceNotes }}</p>
+        </div>
+    @endif
 </div>

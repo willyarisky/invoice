@@ -5,7 +5,6 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center gap-2">
             <h1 class="text-2xl font-semibold text-stone-900">Dashboard</h1>
-            <span class="text-stone-400">:</span>
         </div>
         <form method="GET" action="{{ route('home') }}" class="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-500 shadow-sm">
             <span class="text-stone-400">
@@ -21,29 +20,6 @@
     </div>
 
     <div class="grid gap-6 lg:grid-cols-2">
-        <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
-            <div>
-                <p class="text-lg font-semibold text-stone-900">Total invoices: <span class="font-semibold text-stone-900">{{ $invoiceCountTotal ?? 0 }}</span></p>
-                <div class="mt-3 h-2 rounded-full bg-stone-200">
-                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ $invoiceCountProgress ?? 0 }}%"></div>
-                </div>
-                <div class="mt-4 grid grid-cols-3 text-sm text-stone-500">
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-stone-400">Draft</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusCounts['draft'] ?? 0 }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-stone-400">Sent</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusCounts['sent'] ?? 0 }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-stone-400">Paid</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusCounts['paid'] ?? 0 }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
             <div>
                 <p class="text-lg font-semibold text-stone-900">Total value: <span class="font-semibold text-stone-900">{{ $invoiceAmountTotalLabel ?? '' }}</span></p>
@@ -62,6 +38,29 @@
                     <div>
                         <p class="text-xs uppercase tracking-widest text-stone-400">Paid</p>
                         <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['paid'] ?? '' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
+            <div>
+                <p class="text-lg font-semibold text-stone-900">Total expenses: <span class="font-semibold text-stone-900">{{ $expenseTotalLabel ?? '' }}</span></p>
+                <div class="mt-3 h-2 rounded-full bg-stone-200">
+                    <div class="h-2 rounded-full bg-rose-400" style="width: {{ $expenseProgress ?? 0 }}%"></div>
+                </div>
+                <div class="mt-4 grid grid-cols-3 text-sm text-stone-500">
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-stone-400">Count</p>
+                        <p class="mt-1 font-semibold text-stone-900">{{ $expenseCountTotal ?? 0 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-stone-400">Average</p>
+                        <p class="mt-1 font-semibold text-stone-900">{{ $expenseAverageLabel ?? '' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-stone-400">Largest</p>
+                        <p class="mt-1 font-semibold text-stone-900">{{ $expenseMaxLabel ?? '' }}</p>
                     </div>
                 </div>
             </div>

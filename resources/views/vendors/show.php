@@ -6,13 +6,11 @@
         <div>
             <h1 class="text-2xl font-semibold text-stone-900">{{ $vendor['name'] ?? 'Vendor' }}</h1>
             <p class="mt-1 text-sm text-stone-500">Vendor details &amp; transactions</p>
+            <a href="{{ route('vendors.index') }}" class="mt-1 inline-flex text-sm text-stone-500 hover:text-stone-800">&larr; Back to vendors</a>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <a href="{{ route('vendors.edit', ['vendor' => $vendor['id']]) }}" class="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
                 Edit vendor
-            </a>
-            <a href="{{ route('vendors.index') }}" class="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-50">
-                Back to vendors
             </a>
         </div>
     </div>
