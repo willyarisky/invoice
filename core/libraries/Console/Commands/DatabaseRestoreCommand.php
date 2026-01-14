@@ -92,6 +92,8 @@ final class DatabaseRestoreCommand implements CommandInterface
             return 1;
         }
 
+        $restoreFile = $this->normalizeMysqlDump($file, $config);
+
         $command = sprintf(
             '%s --host=%s --port=%s --user=%s %s < %s',
             escapeshellcmd($binary),
@@ -99,7 +101,7 @@ final class DatabaseRestoreCommand implements CommandInterface
             escapeshellarg($port),
             escapeshellarg($username),
             escapeshellarg($database),
-            escapeshellarg($file)
+            escapeshellarg($restoreFile)
         );
 
         $previous = getenv('MYSQL_PWD');
@@ -107,13 +109,19 @@ final class DatabaseRestoreCommand implements CommandInterface
             putenv('MYSQL_PWD=' . $password);
         }
 
-        $exitCode = $this->runCommand($command, $output);
+        try {
+            $exitCode = $this->runCommand($command, $output);
+        } finally {
+            if ($password !== '') {
+                if ($previous === false) {
+                    putenv('MYSQL_PWD');
+                } else {
+                    putenv('MYSQL_PWD=' . $previous);
+                }
+            }
 
-        if ($password !== '') {
-            if ($previous === false) {
-                putenv('MYSQL_PWD');
-            } else {
-                putenv('MYSQL_PWD=' . $previous);
+            if ($restoreFile !== $file) {
+                @unlink($restoreFile);
             }
         }
 
@@ -222,6 +230,49 @@ final class DatabaseRestoreCommand implements CommandInterface
     {
         fwrite(STDERR, sprintf('Database driver [%s] is not supported by db:restore.%s', $driver, PHP_EOL));
         return 1;
+    }
+
+    private function normalizeMysqlDump(string $file, array $config): string
+    {
+        $collation = trim((string) ($config['collation'] ?? ''));
+        if ($collation === '') {
+            return $file;
+        }
+
+        $pattern = '/utf8mb4_(?:uca1400|0900)[a-z0-9_]+/i';
+
+        $source = @fopen($file, 'rb');
+        if ($source === false) {
+            fwrite(STDERR, sprintf('Unable to read dump file [%s].%s', $file, PHP_EOL));
+            return $file;
+        }
+
+        $normalized = $file . '.normalized';
+        $target = @fopen($normalized, 'wb');
+        if ($target === false) {
+            fclose($source);
+            fwrite(STDERR, sprintf('Unable to write normalized dump [%s].%s', $normalized, PHP_EOL));
+            return $file;
+        }
+
+        $changed = false;
+        while (($line = fgets($source)) !== false) {
+            $updated = preg_replace($pattern, $collation, $line, -1, $count);
+            if ($count > 0) {
+                $changed = true;
+            }
+            fwrite($target, $updated);
+        }
+
+        fclose($source);
+        fclose($target);
+
+        if (!$changed) {
+            @unlink($normalized);
+            return $file;
+        }
+
+        return $normalized;
     }
 
     private function runCommand(string $command, ?array &$output = null): int
