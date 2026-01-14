@@ -22,7 +22,7 @@ class CustomersController
     public function index(Request $request)
     {
         $layout = ViewData::appLayout();
-        $status = Session::get('customer_status');
+        $flashStatus = Session::get('customer_status');
 
         Session::remove('customer_status');
 
@@ -160,10 +160,10 @@ class CustomersController
         ];
 
         foreach ($invoices as $invoice) {
-            $status = strtolower((string) ($invoice['status'] ?? 'draft'));
+            $invoiceStatus = strtolower((string) ($invoice['status'] ?? 'draft'));
             $amount = (float) ($invoice['total'] ?? 0);
 
-            if ($status === 'paid') {
+            if ($invoiceStatus === 'paid') {
                 $totals['paid'] += $amount;
                 continue;
             }
@@ -202,14 +202,14 @@ class CustomersController
         ];
         $invoiceRows = [];
         foreach ($invoices as $invoice) {
-            $status = strtolower((string) ($invoice['status'] ?? 'draft'));
+            $invoiceStatus = strtolower((string) ($invoice['status'] ?? 'draft'));
             $invoiceRows[] = [
                 'id' => $invoice['id'] ?? null,
                 'invoice_no' => $invoice['invoice_no'] ?? '—',
                 'date' => $invoice['date'] ?? '—',
                 'due_date' => $invoice['due_date'] ?? '—',
-                'status_label' => ucfirst($status),
-                'badge_class' => $statusColors[$status] ?? 'bg-stone-100 text-stone-700',
+                'status_label' => ucfirst($invoiceStatus),
+                'badge_class' => $statusColors[$invoiceStatus] ?? 'bg-stone-100 text-stone-700',
                 'total_label' => Setting::formatMoney((float) ($invoice['total'] ?? 0), $invoice['currency'] ?? null),
             ];
         }
@@ -235,7 +235,7 @@ class CustomersController
             'invoiceRows' => $invoiceRows,
             'totalsLabels' => $totalsLabels,
             'canDelete' => $canDelete,
-            'status' => $status,
+            'status' => $flashStatus,
             'emailStatus' => $emailStatus,
             'emailErrors' => $emailErrors,
             'emailOld' => $emailOld,
