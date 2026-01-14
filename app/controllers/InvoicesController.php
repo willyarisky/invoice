@@ -729,8 +729,17 @@ class InvoicesController
         );
 
         $customerEmail = trim((string) ($record['customer_email'] ?? ''));
-        if ($customerEmail === '') {
-            Session::set('invoice_email_errors', ['email' => 'Customer does not have an email address.']);
+        $emailInput = trim((string) $request->input('email', ''));
+        if ($emailInput !== '' && !filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
+            Session::set('invoice_email_errors', ['email' => 'Enter a valid email address.']);
+            Session::set('invoice_email_old', $request->all());
+            return Response::redirect('/invoices/' . $invoice);
+        }
+
+        $recipientEmail = $emailInput !== '' ? $emailInput : $customerEmail;
+        if ($recipientEmail === '') {
+            Session::set('invoice_email_errors', ['email' => 'Recipient email is required.']);
+            Session::set('invoice_email_old', $request->all());
             return Response::redirect('/invoices/' . $invoice);
         }
 
@@ -757,7 +766,7 @@ class InvoicesController
         $message = trim((string) $data['message']);
         $adminEmail = $this->resolveAdminEmail();
         $ccAdmin = (bool) ($data['cc_admin'] ?? false);
-        $ccMyself = (bool) ($data['cc_myself'] ?? false);
+        $bccMyself = (bool) ($data['cc_myself'] ?? false);
         $currentUserEmail = $this->resolveCurrentUserEmail();
 
         $items = DBML::table('invoice_items')
@@ -804,17 +813,17 @@ class InvoicesController
         $pdfContent = $this->renderInvoicePdfContent($record, $items);
         $pdfName = $this->buildInvoicePdfName($record);
 
-        Mail::send(function ($mail) use ($record, $customerEmail, $subject, $html, $ccAdmin, $adminEmail, $ccMyself, $currentUserEmail, $pdfContent, $pdfName) {
-            $mail->to($customerEmail, (string) ($record['customer_name'] ?? 'Customer'))
+        Mail::send(function ($mail) use ($record, $recipientEmail, $subject, $html, $ccAdmin, $adminEmail, $bccMyself, $currentUserEmail, $pdfContent, $pdfName) {
+            $mail->to($recipientEmail, (string) ($record['customer_name'] ?? 'Customer'))
                 ->subject($subject)
                 ->html($html);
 
-            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $customerEmail) {
+            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $recipientEmail) {
                 $mail->cc($adminEmail);
             }
 
-            if ($ccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $customerEmail) {
-                $mail->cc($currentUserEmail);
+            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $recipientEmail) {
+                $mail->bcc($currentUserEmail);
             }
 
             $mail->attach($pdfName, $pdfContent, 'application/pdf');
@@ -835,7 +844,7 @@ class InvoicesController
             $invoice,
             'email_sent',
             'Email sent',
-            $customerEmail !== '' ? 'To: ' . $customerEmail : null,
+            $recipientEmail !== '' ? 'To: ' . $recipientEmail : null,
             $trackingToken,
             $timestamp
         );

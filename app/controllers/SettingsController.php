@@ -571,7 +571,7 @@ class SettingsController
 
         $payload = [
             'mail_from_address' => strtolower(trim((string) $data['mail_from_address'])),
-            'mail_from_name' => trim((string) $data['mail_from_name']),
+            'mail_from_name' => Setting::normalizeMailFromName(trim((string) $data['mail_from_name'])),
             'mail_mailer' => strtolower(trim((string) $data['mail_mailer'])),
             'mail_host' => trim((string) $data['mail_host']),
             'mail_port' => (string) (int) $data['mail_port'],

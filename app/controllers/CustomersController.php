@@ -440,13 +440,13 @@ class CustomersController
         $message = trim((string) $data['message']);
         $adminEmail = $this->resolveAdminEmail();
         $ccAdmin = (bool) ($data['cc_admin'] ?? false);
-        $ccMyself = (bool) ($data['cc_myself'] ?? false);
+        $bccMyself = (bool) ($data['cc_myself'] ?? false);
         $currentUserEmail = $this->resolveCurrentUserEmail();
 
         $safeBody = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
         $html = '<div style="font-family: Arial, sans-serif; line-height: 1.6;">' . $safeBody . '</div>';
 
-        Mail::send(function ($mail) use ($customerEmail, $record, $subject, $html, $ccAdmin, $adminEmail, $ccMyself, $currentUserEmail) {
+        Mail::send(function ($mail) use ($customerEmail, $record, $subject, $html, $ccAdmin, $adminEmail, $bccMyself, $currentUserEmail) {
             $mail->to($customerEmail, (string) ($record['name'] ?? 'Customer'))
                 ->subject($subject)
                 ->html($html);
@@ -455,8 +455,8 @@ class CustomersController
                 $mail->cc($adminEmail);
             }
 
-            if ($ccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $customerEmail) {
-                $mail->cc($currentUserEmail);
+            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $customerEmail) {
+                $mail->bcc($currentUserEmail);
             }
         });
 

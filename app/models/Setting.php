@@ -193,7 +193,31 @@ class Setting extends Model
             return $fallback;
         }
 
-        return (string) env($envKey, $fallback);
+        $value = (string) env($envKey, $fallback);
+        if ($key === 'mail_from_name') {
+            return self::normalizeMailFromName($value);
+        }
+
+        return $value;
+    }
+
+    public static function normalizeMailFromName(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return $value;
+        }
+
+        if (
+            (str_starts_with($value, '"') && str_ends_with($value, '"'))
+            || (str_starts_with($value, "'") && str_ends_with($value, "'"))
+        ) {
+            $value = substr($value, 1, -1);
+        }
+
+        $value = str_replace(['\\"', "\\'"], ['"', "'"], $value);
+
+        return trim($value);
     }
 
     public static function currencyPrefix(): string
