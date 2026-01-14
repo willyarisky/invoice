@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Models\Admin;
 use App\Models\Setting;
 use App\Services\ViewData;
+use App\Controllers\Concerns\BuildsPagination;
+use Zero\Lib\Support\Paginator;
 use Mail;
 use Zero\Lib\Auth\Auth;
 use Zero\Lib\DB\DBML;
@@ -15,12 +17,17 @@ use Zero\Lib\Validation\ValidationException;
 
 class CustomersController
 {
-    public function index()
+    use BuildsPagination;
+
+    public function index(Request $request)
     {
         $layout = ViewData::appLayout();
         $status = Session::get('customer_status');
 
         Session::remove('customer_status');
+
+        $page = (int) $request->input('page', 1);
+        $perPage = 15;
 
         $today = date('Y-m-d');
         $overdueRow = DBML::table('invoices')
@@ -47,6 +54,8 @@ class CustomersController
             'draft' => (float) ($draftRow['total'] ?? 0),
         ];
 
+        $total = DBML::table('customers')->count('id');
+
         $customers = DBML::table('customers as c')
             ->select(
                 'c.id',
@@ -62,6 +71,8 @@ class CustomersController
             ->leftJoin('invoices as i', 'i.customer_id', '=', 'c.id')
             ->groupBy('c.id', 'c.name', 'c.email', 'c.address')
             ->orderBy('c.name')
+            ->limit($perPage)
+            ->offset(($page - 1) * $perPage)
             ->get();
 
         $defaultCurrency = Setting::getValue('default_currency');
@@ -73,10 +84,18 @@ class CustomersController
             $customers[$index]['overdue_label'] = Setting::formatMoney((float) ($customer['total_overdue'] ?? 0), $defaultCurrency);
         }
 
+        $paginator = new Paginator($customers, $total, $perPage, $page);
+        $pagination = $this->buildPaginationData(
+            $paginator,
+            route('customers.index'),
+            $request->all()
+        );
+
         return view('customers/index', array_merge($layout, [
             'customers' => $customers,
             'status' => $status,
             'totals' => $totals,
+            'pagination' => $pagination,
         ]));
     }
 

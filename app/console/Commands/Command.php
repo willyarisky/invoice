@@ -14,7 +14,7 @@ class Command
     public function boot(Application $app): void
     {
         $this->register($app, [
-            // \App\Console\Commands\ExampleCommand::class,
+            \App\Console\Commands\ImportLegacySqlCommand::class,
         ]);
     }
 }

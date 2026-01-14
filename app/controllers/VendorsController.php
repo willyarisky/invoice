@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Models\Setting;
 use App\Services\ViewData;
+use App\Controllers\Concerns\BuildsPagination;
+use Zero\Lib\Support\Paginator;
 use Zero\Lib\DB\DBML;
 use Zero\Lib\Http\Request;
 use Zero\Lib\Http\Response;
@@ -12,6 +14,8 @@ use Zero\Lib\Validation\ValidationException;
 
 class VendorsController
 {
+    use BuildsPagination;
+
     public function index(Request $request)
     {
         $layout = ViewData::appLayout();
@@ -20,6 +24,16 @@ class VendorsController
         Session::remove('vendor_status');
 
         $search = trim((string) $request->input('q', ''));
+        $page = (int) $request->input('page', 1);
+        $perPage = 15;
+
+        $total = DBML::table('vendors as v')
+            ->select('v.id')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereAnyLike(['v.name', 'v.email', 'v.phone', 'v.address'], $search);
+            })
+            ->count('v.id');
+
         $vendors = DBML::table('vendors as v')
             ->select(
                 'v.id',
@@ -35,6 +49,8 @@ class VendorsController
             })
             ->groupBy('v.id', 'v.name', 'v.email', 'v.phone', 'v.address')
             ->orderBy('v.name')
+            ->limit($perPage)
+            ->offset(($page - 1) * $perPage)
             ->get();
 
         $defaultCurrency = Setting::getValue('default_currency');
@@ -42,11 +58,19 @@ class VendorsController
             $vendors[$index]['total_spent_label'] = Setting::formatMoney((float) ($vendor['total_spent'] ?? 0), $defaultCurrency);
         }
 
+        $paginator = new Paginator($vendors, $total, $perPage, $page);
+        $pagination = $this->buildPaginationData(
+            $paginator,
+            route('vendors.index'),
+            $request->all()
+        );
+
         return view('vendors/index', array_merge($layout, [
             'vendors' => $vendors,
-            'vendorCount' => count($vendors),
+            'vendorCount' => $total,
             'status' => $status,
             'search' => $search,
+            'pagination' => $pagination,
         ]));
     }
 

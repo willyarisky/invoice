@@ -81,6 +81,7 @@
                 @endforeach
             </tbody>
         </table>
+        @include('components/pagination', ['pagination' => $pagination ?? []])
     </div>
 </div>
 @endsection

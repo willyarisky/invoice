@@ -7,6 +7,7 @@ use Throwable;
 use App\Models\Admin;
 use App\Models\Setting;
 use App\Services\ViewData;
+use App\Controllers\Concerns\BuildsPagination;
 use Mail;
 use View;
 use Zero\Lib\Auth\Auth;
@@ -19,6 +20,7 @@ use Zero\Lib\Validation\ValidationException;
 
 class InvoicesController
 {
+    use BuildsPagination;
     /**
      * Draft, sent, and paid are the allowed lifecycle phases.
      *
@@ -30,6 +32,8 @@ class InvoicesController
     {
         $layout = ViewData::appLayout();
         $customerId = (int) $request->input('customer_id', 0);
+        $page = (int) $request->input('page', 1);
+        $perPage = 15;
         $filterCustomer = null;
 
         if ($customerId > 0) {
@@ -53,7 +57,8 @@ class InvoicesController
             $query->where('i.customer_id', $customerId);
         }
 
-        $invoices = $query->get();
+        $paginator = $query->paginate($perPage, $page);
+        $invoices = $paginator->items();
         $invoiceRows = [];
         $statusColors = [
             'paid' => 'bg-green-100 text-green-800',
@@ -76,9 +81,16 @@ class InvoicesController
             ];
         }
 
+        $pagination = $this->buildPaginationData(
+            $paginator,
+            route('invoices.index'),
+            $request->all()
+        );
+
         return view('invoices/index', array_merge($layout, [
             'invoices' => $invoiceRows,
             'filterCustomer' => $filterCustomer,
+            'pagination' => $pagination,
         ]));
     }
 

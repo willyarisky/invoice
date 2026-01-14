@@ -5,6 +5,7 @@ namespace App\Controllers;
 use DateTime;
 use App\Models\Setting;
 use App\Services\ViewData;
+use App\Controllers\Concerns\BuildsPagination;
 use Zero\Lib\DB\DBML;
 use Zero\Lib\Http\Request;
 use Zero\Lib\Http\Response;
@@ -13,6 +14,7 @@ use Zero\Lib\Validation\ValidationException;
 
 class TransactionsController
 {
+    use BuildsPagination;
     /**
      * @var string[]
      */
@@ -27,6 +29,8 @@ class TransactionsController
 
         $invoiceId = (int) $request->input('invoice_id', 0);
         $search = trim((string) $request->input('q', ''));
+        $page = (int) $request->input('page', 1);
+        $perPage = 15;
         $query = DBML::table('transactions as t')
             ->select(
                 't.id',
@@ -59,7 +63,8 @@ class TransactionsController
             );
         }
 
-        $transactions = $query->get();
+        $paginator = $query->paginate($perPage, $page);
+        $transactions = $paginator->items();
 
         $defaultCurrency = Setting::getValue('default_currency');
         $transactionRows = [];
@@ -88,12 +93,19 @@ class TransactionsController
             ];
         }
 
+        $pagination = $this->buildPaginationData(
+            $paginator,
+            route('transactions.index'),
+            $request->all()
+        );
+
         return view('transactions/index', array_merge($layout, [
             'transactions' => $transactionRows,
-            'transactionCount' => count($transactionRows),
+            'transactionCount' => $paginator->total(),
             'status' => $status,
             'search' => $search,
             'invoiceId' => $invoiceId,
+            'pagination' => $pagination,
         ]));
     }
 
