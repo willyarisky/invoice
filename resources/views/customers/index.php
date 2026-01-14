@@ -7,7 +7,9 @@
             <h1 class="text-2xl font-semibold text-stone-900">Customers</h1>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input type="search" placeholder="Search customer" class="w-full sm:w-64 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm focus:border-stone-400 focus:outline-none" x-model="search">
+            <div class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm">
+                <input type="search" placeholder="Search customer" class="w-64 bg-transparent text-sm text-stone-600 placeholder:text-stone-400 focus:outline-none" x-model="search">
+            </div>
             <a href="{{ route('customers.create') }}" class="inline-flex items-center justify-center rounded-xl bg-stone-800 px-5 py-2 text-sm font-semibold text-white hover:bg-stone-700">New Customer</a>
         </div>
     </div>
@@ -68,6 +70,15 @@
                                     <a href="{{ route('customers.edit', ['customer' => $customer['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
                                         Edit
                                     </a>
+                                    <form method="POST" action="{{ route('customers.delete', ['customer' => $customer['id']]) }}" @if (!empty($customer['can_delete'] ?? false)) data-confirm="Delete this customer?" @endif>
+                                        <button
+                                            type="submit"
+                                            class="flex w-full items-center px-4 py-2 font-semibold {{ !empty($customer['can_delete'] ?? false) ? 'text-rose-600 hover:bg-rose-50' : 'cursor-not-allowed text-stone-300' }}"
+                                            @if (empty($customer['can_delete'] ?? false)) disabled title="Cannot delete while invoices or transactions exist" @endif
+                                        >
+                                            Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </td>

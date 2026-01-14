@@ -20,6 +20,8 @@ class HomeController
             [$startDate, $endDate] = [$endDate, $startDate];
         }
 
+        $defaultCurrency = Setting::getValue('default_currency');
+
         $statusRows = DBML::table('invoices')
             ->select('status', DBML::raw('COUNT(*) as total'), DBML::raw('COALESCE(SUM(total), 0) as amount'))
             ->where('date', '>=', $startDate)
@@ -27,8 +29,34 @@ class HomeController
             ->groupBy('status')
             ->get();
 
+        $statusCurrencyRows = DBML::table('invoices')
+            ->select('status', 'currency', DBML::raw('COALESCE(SUM(total), 0) as amount'))
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->groupBy('status', 'currency')
+            ->get();
+
+        $invoiceCurrencyRows = DBML::table('invoices')
+            ->select('currency', DBML::raw('COALESCE(SUM(total), 0) as amount'))
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->groupBy('currency')
+            ->get();
+
+        $invoiceCurrencyCodes = DBML::table('invoices')
+            ->select('currency')
+            ->groupBy('currency')
+            ->get();
+
+        $invoiceCurrencyOrder = $this->normalizeCurrencyCodes($invoiceCurrencyCodes, $defaultCurrency);
+        $invoiceCurrencyBreakdown = $this->buildCurrencyBreakdown(
+            $invoiceCurrencyRows,
+            $invoiceCurrencyOrder
+        );
+
         $invoiceStatusCounts = ['draft' => 0, 'sent' => 0, 'paid' => 0];
         $invoiceStatusTotals = ['draft' => 0.0, 'sent' => 0.0, 'paid' => 0.0];
+        $invoiceStatusTotalsByCurrency = ['draft' => [], 'sent' => [], 'paid' => []];
 
         foreach ($statusRows as $row) {
             $key = strtolower((string) ($row['status'] ?? ''));
@@ -38,12 +66,89 @@ class HomeController
             }
         }
 
+        foreach ($statusCurrencyRows as $row) {
+            $status = strtolower((string) ($row['status'] ?? ''));
+            if (!array_key_exists($status, $invoiceStatusTotalsByCurrency)) {
+                continue;
+            }
+            $currency = strtoupper(trim((string) ($row['currency'] ?? '')));
+            if ($currency === '') {
+                $currency = strtoupper($defaultCurrency);
+            }
+            $amount = (float) ($row['amount'] ?? 0);
+            $invoiceStatusTotalsByCurrency[$status][$currency] = ($invoiceStatusTotalsByCurrency[$status][$currency] ?? 0) + $amount;
+        }
+
         $series = $this->buildMonthlySeries($startDate, $endDate);
         $transactions = DBML::table('transactions')
             ->select('type', 'amount', 'date')
             ->where('date', '>=', $startDate)
             ->where('date', '<=', $endDate)
             ->get();
+
+        $expenseCurrencyRows = DBML::table('transactions')
+            ->select('currency', DBML::raw('COALESCE(SUM(amount), 0) as amount'))
+            ->where('type', 'expense')
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->groupBy('currency')
+            ->get();
+
+        $expenseCurrencyStats = DBML::table('transactions')
+            ->select(
+                'currency',
+                DBML::raw('COUNT(*) as total_count'),
+                DBML::raw('COALESCE(SUM(amount), 0) as amount'),
+                DBML::raw('COALESCE(MAX(amount), 0) as max_amount')
+            )
+            ->where('type', 'expense')
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->groupBy('currency')
+            ->get();
+
+        $expenseCurrencyCodes = DBML::table('transactions')
+            ->select('currency')
+            ->where('type', 'expense')
+            ->groupBy('currency')
+            ->get();
+
+        $expenseCurrencyOrder = $this->normalizeCurrencyCodes($expenseCurrencyCodes, $defaultCurrency);
+        $expenseCurrencyBreakdown = $this->buildCurrencyBreakdown(
+            $expenseCurrencyRows,
+            $expenseCurrencyOrder
+        );
+
+        $expenseTotalsByCurrency = [];
+        $expenseCountsByCurrency = [];
+        $expenseMaxByCurrency = [];
+        foreach ($expenseCurrencyStats as $row) {
+            $currency = strtoupper(trim((string) ($row['currency'] ?? '')));
+            if ($currency === '') {
+                $currency = strtoupper($defaultCurrency);
+            }
+            $expenseTotalsByCurrency[$currency] = (float) ($row['amount'] ?? 0);
+            $expenseCountsByCurrency[$currency] = (int) ($row['total_count'] ?? 0);
+            $expenseMaxByCurrency[$currency] = (float) ($row['max_amount'] ?? 0);
+        }
+
+        $invoiceStatusTotalsCurrencyLabels = [];
+        foreach ($invoiceStatusTotalsByCurrency as $status => $totals) {
+            $invoiceStatusTotalsCurrencyLabels[$status] = $this->formatCurrencyTotals(
+                $totals,
+                $invoiceCurrencyOrder
+            );
+        }
+
+        $expenseAverageByCurrency = $this->formatCurrencyAverages(
+            $expenseTotalsByCurrency,
+            $expenseCountsByCurrency,
+            $expenseCurrencyOrder
+        );
+        $expenseMaxByCurrencyLabels = $this->formatCurrencyTotals(
+            $expenseMaxByCurrency,
+            $expenseCurrencyOrder
+        );
 
         $expenseCountTotal = 0;
         $expenseAmountTotal = 0.0;
@@ -211,11 +316,16 @@ class HomeController
             'invoiceCountProgress' => $invoiceCountProgress,
             'invoiceAmountProgress' => $invoiceAmountProgress,
             'invoiceStatusTotalsLabels' => $invoiceStatusTotalsLabels,
+            'invoiceStatusTotalsCurrencyLabels' => $invoiceStatusTotalsCurrencyLabels,
+            'invoiceCurrencyBreakdown' => $invoiceCurrencyBreakdown,
             'expenseCountTotal' => $expenseCountTotal,
             'expenseTotalLabel' => $expenseTotalLabel,
             'expenseAverageLabel' => $expenseAverageLabel,
             'expenseMaxLabel' => $expenseMaxLabel,
             'expenseProgress' => $expenseProgress,
+            'expenseAverageByCurrency' => $expenseAverageByCurrency,
+            'expenseMaxByCurrency' => $expenseMaxByCurrencyLabels,
+            'expenseCurrencyBreakdown' => $expenseCurrencyBreakdown,
             'cashFlow' => [
                 'series' => $cashFlowSeries,
                 'totals' => $cashFlowTotals,
@@ -276,5 +386,109 @@ class HomeController
         }
 
         return $series;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @param string[] $currencyOrder
+     * @return array<int, array{currency: string, label: string}>
+     */
+    private function buildCurrencyBreakdown(array $rows, array $currencyOrder = []): array
+    {
+        $totals = [];
+        $defaultCurrency = Setting::getValue('default_currency');
+
+        foreach ($rows as $row) {
+            $currency = strtoupper(trim((string) ($row['currency'] ?? '')));
+            if ($currency === '') {
+                $currency = strtoupper($defaultCurrency);
+            }
+            $amount = (float) ($row['amount'] ?? 0);
+            $totals[$currency] = ($totals[$currency] ?? 0) + $amount;
+        }
+
+        $currencyOrder = $currencyOrder !== [] ? $currencyOrder : array_keys($totals);
+        $currencyOrder = array_values(array_unique($currencyOrder));
+
+        if (count($currencyOrder) <= 1) {
+            return [];
+        }
+
+        $breakdown = [];
+        foreach ($currencyOrder as $currency) {
+            $amount = (float) ($totals[$currency] ?? 0);
+            $breakdown[] = [
+                'currency' => $currency,
+                'label' => Setting::formatMoney($amount, $currency),
+            ];
+        }
+
+        return $breakdown;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return string[]
+     */
+    private function normalizeCurrencyCodes(array $rows, string $defaultCurrency): array
+    {
+        $currencyCodes = [];
+
+        foreach ($rows as $row) {
+            $currency = strtoupper(trim((string) ($row['currency'] ?? '')));
+            if ($currency === '') {
+                $currency = strtoupper($defaultCurrency);
+            }
+            $currencyCodes[] = $currency;
+        }
+
+        return array_values(array_unique($currencyCodes));
+    }
+
+    /**
+     * @param array<string, float> $totals
+     * @param string[] $currencyOrder
+     * @return array<int, array{currency: string, label: string}>
+     */
+    private function formatCurrencyTotals(array $totals, array $currencyOrder): array
+    {
+        if ($currencyOrder === []) {
+            $currencyOrder = array_keys($totals);
+        }
+
+        $labels = [];
+        foreach ($currencyOrder as $currency) {
+            $labels[] = [
+                'currency' => $currency,
+                'label' => Setting::formatMoney((float) ($totals[$currency] ?? 0), $currency),
+            ];
+        }
+
+        return $labels;
+    }
+
+    /**
+     * @param array<string, float> $totals
+     * @param array<string, int> $counts
+     * @param string[] $currencyOrder
+     * @return array<int, array{currency: string, label: string}>
+     */
+    private function formatCurrencyAverages(array $totals, array $counts, array $currencyOrder): array
+    {
+        if ($currencyOrder === []) {
+            $currencyOrder = array_keys($totals);
+        }
+
+        $labels = [];
+        foreach ($currencyOrder as $currency) {
+            $count = (int) ($counts[$currency] ?? 0);
+            $average = $count > 0 ? ((float) ($totals[$currency] ?? 0) / $count) : 0.0;
+            $labels[] = [
+                'currency' => $currency,
+                'label' => Setting::formatMoney($average, $currency),
+            ];
+        }
+
+        return $labels;
     }
 }

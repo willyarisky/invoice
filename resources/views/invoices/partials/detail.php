@@ -49,7 +49,7 @@
             <thead class="uppercase font-bold text-stone-900 border-b border-b-2 rounded-top-lg rounded-t-xl">
                 <tr>
                     <th class="py-3 text-left font-semibold">Items</th>
-                    <th class="py-3 text-center font-semibold">Quantity</th>
+                    <th class="py-3 text-center font-semibold">QTY</th>
                     <th class="py-3 text-start font-semibold">Price</th>
                     <th class="py-3 text-right font-semibold">Amount</th>
                 </tr>
@@ -57,12 +57,12 @@
             <tbody class="divide-y divide-stone-200 border-b border-stone-200">
                 @foreach ($items as $item)
                     <tr>
-                        <td class="py-3">
+                        <td class="py-3 w-[70%]">
                             <p class="font-semibold text-stone-900">{{ $item['description'] ?? '' }}</p>
                         </td>
-                        <td class="py-3 text-center">{{ $item['qty'] ?? 0 }}</td>
-                        <td class="py-3 text-start">{{ $item['unit_label'] ?? '' }}</td>
-                        <td class="py-3 text-right font-semibold">{{ $item['subtotal_label'] ?? '' }}</td>
+                        <td class="py-3 w-[10%] text-center">{{ $item['qty'] ?? 0 }}</td>
+                        <td class="py-3 w-[10%] text-start">{{ $item['unit_label'] ?? '' }}</td>
+                        <td class="py-3 w-[10%] text-right font-semibold">{{ $item['subtotal_label'] ?? '' }}</td>
                     </tr>
                 @endforeach
             </tbody>

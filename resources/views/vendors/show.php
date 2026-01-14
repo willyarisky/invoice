@@ -5,13 +5,21 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-stone-900">{{ $vendor['name'] ?? 'Vendor' }}</h1>
-            <p class="mt-1 text-sm text-stone-500">Vendor details &amp; transactions</p>
             <a href="{{ route('vendors.index') }}" class="mt-1 inline-flex text-sm text-stone-500 hover:text-stone-800">&larr; Back to vendors</a>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <a href="{{ route('vendors.edit', ['vendor' => $vendor['id']]) }}" class="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
                 Edit vendor
             </a>
+            <form method="POST" action="{{ route('vendors.delete', ['vendor' => $vendor['id']]) }}" @if (!empty($canDelete)) data-confirm="Delete this vendor?" @endif>
+                <button
+                    type="submit"
+                    class="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold {{ !empty($canDelete) ? 'text-rose-600 hover:bg-rose-50' : 'cursor-not-allowed text-stone-300' }}"
+                    @if (empty($canDelete)) disabled title="Cannot delete while transactions exist" @endif
+                >
+                    Delete vendor
+                </button>
+            </form>
         </div>
     </div>
 

@@ -36,8 +36,126 @@
             @endforeach
         </nav>
     </header>
-    <main class="mx-auto w-full max-w-[1200px] px-6 py-6">
+    <main class="mx-auto w-full min-h-[80vh] max-w-[1200px] px-6 py-6">
         @yield('content')
     </main>
+    <footer class="border-t border-stone-200 bg-white text-stone-500 print:hidden">
+        <div class="mx-auto flex justify-between w-full max-w-[1200px] px-6 py-5 text-xs uppercase tracking-widest text-center">
+            <span class="font-semibold">{{ $brandName }} &copy; {{ date('Y') }}</span>
+            <span>V1.0.0</span>
+        </div>
+    </footer>
+    <div id="app-modal-root" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4 print:hidden" role="dialog" aria-modal="true" aria-labelledby="app-modal-title" aria-describedby="app-modal-message" aria-hidden="true">
+        <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-stone-900 shadow-xl">
+            <p class="text-lg font-semibold" id="app-modal-title" data-modal-title>Notice</p>
+            <p class="mt-2 text-sm text-stone-600 whitespace-pre-line" id="app-modal-message" data-modal-message></p>
+            <div class="mt-6 flex items-center justify-end gap-2">
+                <button type="button" class="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-50" data-modal-cancel>Cancel</button>
+                <button type="button" class="rounded-xl bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800" data-modal-confirm>OK</button>
+            </div>
+        </div>
+    </div>
 </div>
+<script>
+(() => {
+    const root = document.getElementById('app-modal-root');
+    if (!root) {
+        return;
+    }
+
+    const titleEl = root.querySelector('[data-modal-title]');
+    const messageEl = root.querySelector('[data-modal-message]');
+    const cancelBtn = root.querySelector('[data-modal-cancel]');
+    const confirmBtn = root.querySelector('[data-modal-confirm]');
+    let resolver = null;
+    let currentMode = 'alert';
+
+    const openModal = ({ title, message, confirmText, cancelText, showCancel, mode }) => {
+        currentMode = mode || 'alert';
+        titleEl.textContent = title || 'Notice';
+        messageEl.textContent = message || '';
+        confirmBtn.textContent = confirmText || 'OK';
+        cancelBtn.textContent = cancelText || 'Cancel';
+        cancelBtn.classList.toggle('hidden', !showCancel);
+        root.classList.remove('hidden');
+        root.classList.add('flex');
+        root.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        confirmBtn.focus();
+    };
+
+    const resolveAndClose = (value) => {
+        if (resolver) {
+            resolver(value);
+            resolver = null;
+        }
+        root.classList.add('hidden');
+        root.classList.remove('flex');
+        root.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    };
+
+    confirmBtn.addEventListener('click', () => resolveAndClose(true));
+    cancelBtn.addEventListener('click', () => resolveAndClose(false));
+    root.addEventListener('click', (event) => {
+        if (event.target === root) {
+            resolveAndClose(currentMode === 'alert');
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !root.classList.contains('hidden')) {
+            event.preventDefault();
+            resolveAndClose(currentMode === 'alert');
+        }
+    });
+
+    window.appAlert = (message, options = {}) => new Promise((resolve) => {
+        resolver = resolve;
+        openModal({
+            title: options.title || 'Notice',
+            message: message,
+            confirmText: options.confirmText || 'OK',
+            cancelText: options.cancelText || 'Cancel',
+            showCancel: false,
+            mode: 'alert',
+        });
+    });
+
+    window.appConfirm = (message, options = {}) => new Promise((resolve) => {
+        resolver = resolve;
+        openModal({
+            title: options.title || 'Confirm',
+            message: message,
+            confirmText: options.confirmText || 'Confirm',
+            cancelText: options.cancelText || 'Cancel',
+            showCancel: true,
+            mode: 'confirm',
+        });
+    });
+
+    window.alert = (message) => {
+        window.appAlert(message);
+    };
+
+    window.confirm = (message) => {
+        console.warn('window.confirm is async; use window.appConfirm instead.');
+        window.appConfirm(message);
+        return false;
+    };
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!form || !form.hasAttribute('data-confirm')) {
+            return;
+        }
+        event.preventDefault();
+        const message = form.getAttribute('data-confirm') || 'Are you sure?';
+        window.appConfirm(message).then((confirmed) => {
+            if (confirmed) {
+                form.submit();
+            }
+        });
+    });
+})();
+</script>
 @include('components.footer')

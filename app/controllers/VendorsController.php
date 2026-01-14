@@ -41,7 +41,8 @@ class VendorsController
                 'v.email',
                 'v.phone',
                 'v.address',
-                DBML::raw("COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_spent")
+                DBML::raw("COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_spent"),
+                DBML::raw('COUNT(t.id) as transaction_count')
             )
             ->leftJoin('transactions as t', 't.vendor_id', '=', 'v.id')
             ->when($search !== '', function ($query) use ($search) {
@@ -56,6 +57,7 @@ class VendorsController
         $defaultCurrency = Setting::getValue('default_currency');
         foreach ($vendors as $index => $vendor) {
             $vendors[$index]['total_spent_label'] = Setting::formatMoney((float) ($vendor['total_spent'] ?? 0), $defaultCurrency);
+            $vendors[$index]['can_delete'] = ((int) ($vendor['transaction_count'] ?? 0)) === 0;
         }
 
         $paginator = new Paginator($vendors, $total, $perPage, $page);
@@ -246,6 +248,9 @@ class VendorsController
             return Response::redirect('/vendors');
         }
 
+        $hasTransactions = DBML::table('transactions')->where('vendor_id', $vendor)->exists();
+        $canDelete = ! $hasTransactions;
+
         $transactions = DBML::table('transactions as t')
             ->select(
                 't.id',
@@ -305,7 +310,35 @@ class VendorsController
             'transactions' => $transactionRows,
             'transactionCount' => $transactionCount,
             'totalSpentLabel' => Setting::formatMoney($totalSpent),
+            'canDelete' => $canDelete,
             'status' => $status,
         ]));
+    }
+
+    public function delete(int $vendor): Response
+    {
+        Session::remove('vendor_status');
+
+        $record = DBML::table('vendors')
+            ->select('id')
+            ->where('id', $vendor)
+            ->first();
+
+        if ($record === null) {
+            Session::set('vendor_status', 'Vendor not found.');
+            return Response::redirect('/vendors');
+        }
+
+        $hasTransactions = DBML::table('transactions')->where('vendor_id', $vendor)->exists();
+        if ($hasTransactions) {
+            Session::set('vendor_status', 'Vendor has related transactions and cannot be deleted.');
+            return Response::redirect('/vendors/' . $vendor);
+        }
+
+        DBML::table('vendors')->where('id', $vendor)->delete();
+
+        Session::set('vendor_status', 'Vendor deleted successfully.');
+
+        return Response::redirect('/vendors');
     }
 }

@@ -70,6 +70,16 @@
                                     <a href="{{ route('vendors.edit', ['vendor' => $vendor['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
                                         Edit
                                     </a>
+                                    <form method="POST" action="{{ route('vendors.delete', ['vendor' => $vendor['id']]) }}" @if (!empty($vendor['can_delete'] ?? false)) data-confirm="Delete this vendor?" @endif>
+                                        <button
+                                            type="submit"
+                                            class="flex w-full items-center px-4 py-2 font-semibold {{ !empty($vendor['can_delete'] ?? false) ? 'text-rose-600 hover:bg-rose-50' : 'cursor-not-allowed text-stone-300' }}"
+                                            @if (empty($vendor['can_delete'] ?? false)) disabled title="Cannot delete while transactions exist" @endif
+                                            onclick="event.stopPropagation();"
+                                        >
+                                            Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </td>

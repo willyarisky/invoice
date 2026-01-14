@@ -153,8 +153,15 @@ class SettingsController
         $categories = [];
 
         try {
-            $categories = DBML::table('categories')
-                ->select('id', 'name', 'created_at')
+            $categories = DBML::table('categories as c')
+                ->select(
+                    'c.id',
+                    'c.name',
+                    'c.created_at',
+                    DBML::raw('COALESCE(COUNT(t.id), 0) as transaction_count')
+                )
+                ->leftJoin('transactions as t', 't.category_id', '=', 'c.id')
+                ->groupBy('c.id', 'c.name', 'c.created_at')
                 ->orderBy('name')
                 ->get();
         } catch (Throwable) {
@@ -174,6 +181,7 @@ class SettingsController
             $categoryRows[] = [
                 'id' => $category['id'] ?? null,
                 'name' => $category['name'] ?? '',
+                'transaction_count' => (int) ($category['transaction_count'] ?? 0),
                 'edit_action' => route('settings.categories.update', ['category' => $category['id'] ?? 0]),
             ];
         }

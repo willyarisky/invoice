@@ -42,6 +42,7 @@
                     <th class="px-4 py-3">Type</th>
                     <th class="px-4 py-3">Source</th>
                     <th class="px-4 py-3">Vendor</th>
+                    <th class="px-4 py-3">Category</th>
                     <th class="px-4 py-3 text-right">Amount</th>
                     <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -69,6 +70,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3">{{ $transaction['vendor_name'] ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ $transaction['category_name'] ?? '—' }}</td>
                         <td class="px-4 py-3 text-right font-semibold {{ $transaction['amount_class'] ?? '' }}">{{ $transaction['amount_label'] ?? '' }}</td>
                         <td class="px-4 py-3 text-right" onclick="event.stopPropagation();">
                             <div class="relative inline-flex" x-data="{ open: false }">

@@ -78,6 +78,7 @@
                     <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
                         <tr>
                             <th class="px-4 py-3">Name</th>
+                            <th class="px-4 py-3 text-right">Transactions</th>
                             <th class="px-4 py-3 text-right">Action</th>
                         </tr>
                     </thead>
@@ -85,6 +86,7 @@
                         @foreach ($categories as $category)
                             <tr>
                                 <td class="px-4 py-3 font-semibold text-stone-900">{{ $category['name'] ?? '' }}</td>
+                                <td class="px-4 py-3 text-right text-stone-700">{{ $category['transaction_count'] ?? 0 }}</td>
                                 <td class="px-4 py-3 text-right">
                                     <div class="flex justify-end gap-4">
                                         <button
@@ -104,7 +106,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="2" class="px-4 py-6 text-center text-stone-500">No categories created yet.</td>
+                                <td colspan="3" class="px-4 py-6 text-center text-stone-500">No categories created yet.</td>
                             </tr>
                         @endforeach
                     </tbody>

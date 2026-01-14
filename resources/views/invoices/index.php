@@ -7,7 +7,9 @@
             <h1 class="text-2xl font-semibold text-stone-900">Invoices</h1>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input type="search" placeholder="Search by customer or invoice #" class="w-full sm:w-64 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm focus:border-stone-400 focus:outline-none" x-model="search">
+            <div class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm">
+                <input type="search" placeholder="Search by customer or invoice #" class="w-64 bg-transparent text-sm text-stone-600 placeholder:text-stone-400 focus:outline-none" x-model="search">
+            </div>
             <a href="{{ route('invoices.create') }}" class="inline-flex items-center justify-center rounded-xl bg-stone-800 px-5 py-2 text-sm font-semibold text-white hover:bg-stone-700">New Invoice</a>
         </div>
     </div>

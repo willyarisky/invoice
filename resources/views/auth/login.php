@@ -3,9 +3,8 @@
 @section('content')
 <div class="space-y-6">
     <div>
-        <p class="text-xs uppercase tracking-[0.4em] text-stone-400">Welcome back</p>
-        <h2 class="mt-3 font-display text-3xl text-stone-900">Sign in to your workspace</h2>
-        <p class="mt-2 text-sm text-stone-500">Use your team email to continue.</p>
+        <p class="text-xs uppercase tracking-widest text-stone-400">Welcome back</p>
+        <h2 class="mt-2 text-2xl font-semibold text-stone-900">Sign in</h2>
     </div>
 
     @if (!empty($status ?? ''))
@@ -73,12 +72,7 @@
             @endif
         </label>
 
-        <div class="flex items-center justify-between text-sm text-stone-500">
-            <span>Need access? Ask your admin.</span>
-            <a href="{{ route('auth.password.forgot') }}" class="text-stone-700 hover:text-stone-900">Forgot password?</a>
-        </div>
-
-        <button type="submit" class="w-full rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-stone-900/20 transition hover:-translate-y-0.5 hover:bg-stone-800">
+        <button type="submit" class="w-full rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white hover:bg-stone-800">
             Sign in
         </button>
 

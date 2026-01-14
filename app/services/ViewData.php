@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Admin;
 use App\Models\Setting;
 use Zero\Lib\Auth\Auth;
 use Zero\Lib\Http\Request;
@@ -15,13 +14,7 @@ class ViewData
         $request = Request::instance();
         $path = trim($request->path(), '/');
         $currentUser = Auth::user();
-        $isAdmin = false;
-
-        if ($currentUser && isset($currentUser->email)) {
-            $isAdmin = Admin::query()
-                ->where('email', strtolower((string) $currentUser->email))
-                ->exists();
-        }
+        $isAdmin = true;
 
         $navItems = [
             ['label' => 'Dashboard', 'href' => route('home'), 'pattern' => '/^$/'],

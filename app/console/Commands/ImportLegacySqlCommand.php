@@ -19,7 +19,7 @@ final class ImportLegacySqlCommand implements CommandInterface
 
     public function getDescription(): string
     {
-        return 'Import customers, vendors, invoices, invoice items, and transactions from a legacy SQL dump.';
+        return 'Import customers, vendors, categories, invoices, invoice items, and transactions from a legacy SQL dump.';
     }
 
     public function getUsage(): string
@@ -58,30 +58,36 @@ final class ImportLegacySqlCommand implements CommandInterface
 
         $customerMap = [];
         $vendorMap = [];
+        $categoryMap = [];
         $invoiceMap = [];
         $stats = [
             'customers_inserted' => 0,
             'customers_skipped' => 0,
             'vendors_inserted' => 0,
             'vendors_skipped' => 0,
+            'categories_inserted' => 0,
+            'categories_skipped' => 0,
             'invoices_inserted' => 0,
             'invoices_skipped' => 0,
             'invoices_ignored' => 0,
             'invoice_items_inserted' => 0,
             'invoice_items_skipped' => 0,
             'transactions_inserted' => 0,
+            'transactions_updated' => 0,
             'transactions_skipped' => 0,
             'transactions_ignored' => 0,
             'placeholders_used' => 0,
+            'skip_reasons' => [],
         ];
 
         try {
             Database::startTransaction();
             $this->importContacts($filePath, $companyId, $dryRun, $customerMap, $vendorMap, $stats);
+            $this->importCategories($filePath, $companyId, $dryRun, $categoryMap, $stats);
             Database::commit();
         } catch (\Throwable $exception) {
             Database::rollback();
-            $this->writeLine('Failed to import contacts: ' . $exception->getMessage());
+            $this->writeLine('Failed to import contacts or categories: ' . $exception->getMessage());
             return 1;
         }
 
@@ -98,7 +104,7 @@ final class ImportLegacySqlCommand implements CommandInterface
 
         try {
             Database::startTransaction();
-            $this->importTransactions($filePath, $companyId, $dryRun, $vendorMap, $invoiceMap, $stats);
+            $this->importTransactions($filePath, $companyId, $dryRun, $vendorMap, $categoryMap, $invoiceMap, $stats);
             Database::commit();
         } catch (\Throwable $exception) {
             Database::rollback();
@@ -110,17 +116,21 @@ final class ImportLegacySqlCommand implements CommandInterface
         $this->writeLine('Customers skipped: ' . $stats['customers_skipped']);
         $this->writeLine('Vendors inserted: ' . $stats['vendors_inserted']);
         $this->writeLine('Vendors skipped: ' . $stats['vendors_skipped']);
+        $this->writeLine('Categories inserted: ' . $stats['categories_inserted']);
+        $this->writeLine('Categories skipped: ' . $stats['categories_skipped']);
         $this->writeLine('Invoices inserted: ' . $stats['invoices_inserted']);
         $this->writeLine('Invoices skipped: ' . $stats['invoices_skipped']);
         $this->writeLine('Invoices ignored: ' . $stats['invoices_ignored']);
         $this->writeLine('Invoice items inserted: ' . $stats['invoice_items_inserted']);
         $this->writeLine('Invoice items skipped: ' . $stats['invoice_items_skipped']);
         $this->writeLine('Transactions inserted: ' . $stats['transactions_inserted']);
+        $this->writeLine('Transactions updated: ' . $stats['transactions_updated']);
         $this->writeLine('Transactions skipped: ' . $stats['transactions_skipped']);
         $this->writeLine('Transactions ignored: ' . $stats['transactions_ignored']);
         if ($stats['placeholders_used'] > 0) {
             $this->writeLine('Customer email placeholders used: ' . $stats['placeholders_used']);
         }
+        $this->writeSkipReasonSummary($stats);
 
         return 0;
     }
@@ -178,6 +188,7 @@ final class ImportLegacySqlCommand implements CommandInterface
         $existing = DBML::table('customers')->select('id')->where('email', $email)->first();
         if (!empty($existing['id'])) {
             $stats['customers_skipped']++;
+            $this->addSkipReason($stats, 'customers', 'existing_email');
             return ['id' => (int) $existing['id']];
         }
 
@@ -226,6 +237,7 @@ final class ImportLegacySqlCommand implements CommandInterface
 
         if (!empty($existing['id'])) {
             $stats['vendors_skipped']++;
+            $this->addSkipReason($stats, 'vendors', $email !== '' ? 'existing_email' : 'existing_name');
             return ['id' => (int) $existing['id']];
         }
 
@@ -253,6 +265,7 @@ final class ImportLegacySqlCommand implements CommandInterface
         int $companyId,
         bool $dryRun,
         array $vendorMap,
+        array $categoryMap,
         array $invoiceMap,
         array &$stats
     ): void {
@@ -304,6 +317,18 @@ final class ImportLegacySqlCommand implements CommandInterface
                 }
             }
 
+            $categoryId = null;
+            $legacyCategoryId = (int) ($row['category_id'] ?? 0);
+            if ($legacyCategoryId > 0) {
+                if (array_key_exists($legacyCategoryId, $categoryMap)) {
+                    if ($categoryMap[$legacyCategoryId] > 0) {
+                        $categoryId = $categoryMap[$legacyCategoryId];
+                    }
+                } else {
+                    $this->addSkipReason($stats, 'transactions', 'missing_category');
+                }
+            }
+
             $invoiceId = null;
             $source = 'manual';
             if ($type === 'income') {
@@ -314,7 +339,7 @@ final class ImportLegacySqlCommand implements CommandInterface
                 }
             }
 
-            if ($this->transactionExists(
+            $existingId = $this->findTransactionId(
                 $type,
                 $amountValue,
                 $currency,
@@ -322,10 +347,42 @@ final class ImportLegacySqlCommand implements CommandInterface
                 $description,
                 $source,
                 $vendorId,
-                $invoiceId
-            )) {
+                $invoiceId,
+                $categoryId
+            );
+
+            if ($existingId !== null) {
                 $stats['transactions_skipped']++;
+                $this->addSkipReason($stats, 'transactions', 'duplicate');
                 continue;
+            }
+
+            if ($categoryId !== null) {
+                $existingWithoutCategory = $this->findTransactionIdWithNullCategory(
+                    $type,
+                    $amountValue,
+                    $currency,
+                    $date,
+                    $description,
+                    $source,
+                    $vendorId,
+                    $invoiceId
+                );
+
+                if ($existingWithoutCategory !== null) {
+                    if ($dryRun) {
+                        $stats['transactions_updated']++;
+                        continue;
+                    }
+
+                    DBML::table('transactions')->where('id', $existingWithoutCategory)->update([
+                        'category_id' => $categoryId,
+                        'updated_at' => $now,
+                    ]);
+
+                    $stats['transactions_updated']++;
+                    continue;
+                }
             }
 
             $createdAt = $this->normalizeTimestamp($row['created_at'] ?? null, $now);
@@ -345,6 +402,7 @@ final class ImportLegacySqlCommand implements CommandInterface
                 'source' => $source,
                 'vendor_id' => $vendorId,
                 'invoice_id' => $invoiceId,
+                'category_id' => $categoryId,
                 'created_at' => $createdAt,
                 'updated_at' => $updatedAt,
             ]);
@@ -353,7 +411,7 @@ final class ImportLegacySqlCommand implements CommandInterface
         }
     }
 
-    private function transactionExists(
+    private function findTransactionId(
         string $type,
         string $amount,
         string $currency,
@@ -361,8 +419,9 @@ final class ImportLegacySqlCommand implements CommandInterface
         string $description,
         string $source,
         ?int $vendorId,
-        ?int $invoiceId
-    ): bool {
+        ?int $invoiceId,
+        ?int $categoryId
+    ): ?int {
         $query = DBML::table('transactions')
             ->select('id')
             ->where('type', $type)
@@ -384,7 +443,110 @@ final class ImportLegacySqlCommand implements CommandInterface
             $query->where('invoice_id', $invoiceId);
         }
 
-        return (bool) $query->first();
+        if ($categoryId === null) {
+            $query->whereNull('category_id');
+        } else {
+            $query->where('category_id', $categoryId);
+        }
+
+        $record = $query->first();
+        if (!empty($record['id'])) {
+            return (int) $record['id'];
+        }
+
+        return null;
+    }
+
+    private function findTransactionIdWithNullCategory(
+        string $type,
+        string $amount,
+        string $currency,
+        string $date,
+        string $description,
+        string $source,
+        ?int $vendorId,
+        ?int $invoiceId
+    ): ?int {
+        $query = DBML::table('transactions')
+            ->select('id')
+            ->where('type', $type)
+            ->where('amount', $amount)
+            ->where('currency', $currency)
+            ->where('date', $date)
+            ->where('description', $description)
+            ->where('source', $source)
+            ->whereNull('category_id');
+
+        if ($vendorId === null) {
+            $query->whereNull('vendor_id');
+        } else {
+            $query->where('vendor_id', $vendorId);
+        }
+
+        if ($invoiceId === null) {
+            $query->whereNull('invoice_id');
+        } else {
+            $query->where('invoice_id', $invoiceId);
+        }
+
+        $record = $query->first();
+        if (!empty($record['id'])) {
+            return (int) $record['id'];
+        }
+
+        return null;
+    }
+
+    private function importCategories(
+        string $filePath,
+        int $companyId,
+        bool $dryRun,
+        array &$categoryMap,
+        array &$stats
+    ): void {
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($this->iterateInsertRows($filePath, 'grw_categories') as $row) {
+            if ((int) ($row['company_id'] ?? 0) !== $companyId) {
+                continue;
+            }
+
+            if (!empty($row['deleted_at'] ?? '')) {
+                continue;
+            }
+
+            $legacyId = (int) ($row['id'] ?? 0);
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($name === '') {
+                $name = 'Category ' . (string) $legacyId;
+            }
+
+            $existing = DBML::table('categories')->select('id')->where('name', $name)->first();
+            if (!empty($existing['id'])) {
+                $categoryMap[$legacyId] = (int) $existing['id'];
+                $stats['categories_skipped']++;
+                $this->addSkipReason($stats, 'categories', 'existing_name');
+                continue;
+            }
+
+            if ($dryRun) {
+                $stats['categories_inserted']++;
+                $categoryMap[$legacyId] = 0;
+                continue;
+            }
+
+            $createdAt = $this->normalizeTimestamp($row['created_at'] ?? null, $now);
+            $updatedAt = $this->normalizeTimestamp($row['updated_at'] ?? null, $createdAt);
+
+            $categoryId = DBML::table('categories')->insert([
+                'name' => $name,
+                'created_at' => $createdAt,
+                'updated_at' => $updatedAt,
+            ]);
+
+            $stats['categories_inserted']++;
+            $categoryMap[$legacyId] = (int) $categoryId;
+        }
     }
 
     private function importInvoices(
@@ -418,6 +580,7 @@ final class ImportLegacySqlCommand implements CommandInterface
             $customerId = $this->resolveInvoiceCustomerId($row, $customerMap, $dryRun, $stats, $now);
             if ($customerId === null || ($customerId === 0 && ! $dryRun)) {
                 $stats['invoices_skipped']++;
+                $this->addSkipReason($stats, 'invoices', 'missing_customer');
                 continue;
             }
 
@@ -435,11 +598,13 @@ final class ImportLegacySqlCommand implements CommandInterface
             if ($existingId !== null) {
                 $invoiceMap[$legacyId] = $existingId;
                 $stats['invoices_skipped']++;
+                $this->addSkipReason($stats, 'invoices', 'existing_invoice');
                 continue;
             }
 
             if (isset($usedInvoiceNumbers[$invoiceNo])) {
                 $stats['invoices_skipped']++;
+                $this->addSkipReason($stats, 'invoices', 'duplicate_invoice_no');
                 continue;
             }
 
@@ -513,12 +678,14 @@ final class ImportLegacySqlCommand implements CommandInterface
             $documentId = (int) ($row['document_id'] ?? 0);
             if ($documentId <= 0 || !array_key_exists($documentId, $invoiceMap)) {
                 $stats['invoice_items_skipped']++;
+                $this->addSkipReason($stats, 'invoice_items', 'missing_invoice');
                 continue;
             }
 
             $invoiceId = (int) $invoiceMap[$documentId];
             if ($invoiceId <= 0 && ! $dryRun) {
                 $stats['invoice_items_skipped']++;
+                $this->addSkipReason($stats, 'invoice_items', 'missing_invoice');
                 continue;
             }
 
@@ -546,8 +713,10 @@ final class ImportLegacySqlCommand implements CommandInterface
             $createdAt = $this->normalizeTimestamp($row['created_at'] ?? null, $now);
             $updatedAt = $this->normalizeTimestamp($row['updated_at'] ?? null, $createdAt);
 
-            if ($invoiceId > 0 && $this->invoiceItemExists($invoiceId, $description, $qty, $unitPrice, $subtotal)) {
+            $invoiceHasItems = $this->invoiceHasExistingItems($invoiceId, $dryRun);
+            if ($invoiceHasItems) {
                 $stats['invoice_items_skipped']++;
+                $this->addSkipReason($stats, 'invoice_items', 'invoice_has_items');
                 continue;
             }
 
@@ -680,6 +849,27 @@ final class ImportLegacySqlCommand implements CommandInterface
         return implode("\n", $lines);
     }
 
+    private function invoiceHasExistingItems(int $invoiceId, bool $dryRun): bool
+    {
+        if ($dryRun || $invoiceId <= 0) {
+            return false;
+        }
+
+        static $cache = [];
+        if (array_key_exists($invoiceId, $cache)) {
+            return $cache[$invoiceId];
+        }
+
+        $hasItems = DBML::table('invoice_items')
+            ->select('id')
+            ->where('invoice_id', $invoiceId)
+            ->exists();
+
+        $cache[$invoiceId] = $hasItems;
+
+        return $hasItems;
+    }
+
     private function normalizeNullableDate(string $value): ?string
     {
         $value = trim($value);
@@ -705,23 +895,38 @@ final class ImportLegacySqlCommand implements CommandInterface
         return null;
     }
 
-    private function invoiceItemExists(
-        int $invoiceId,
-        string $description,
-        int $qty,
-        string $unitPrice,
-        string $subtotal
-    ): bool {
-        $existing = DBML::table('invoice_items')
-            ->select('id')
-            ->where('invoice_id', $invoiceId)
-            ->where('description', $description)
-            ->where('qty', $qty)
-            ->where('unit_price', $unitPrice)
-            ->where('subtotal', $subtotal)
-            ->first();
+    private function addSkipReason(array &$stats, string $group, string $reason): void
+    {
+        if (!isset($stats['skip_reasons'][$group])) {
+            $stats['skip_reasons'][$group] = [];
+        }
 
-        return !empty($existing['id']);
+        if (!isset($stats['skip_reasons'][$group][$reason])) {
+            $stats['skip_reasons'][$group][$reason] = 0;
+        }
+
+        $stats['skip_reasons'][$group][$reason]++;
+    }
+
+    private function writeSkipReasonSummary(array $stats): void
+    {
+        $skipReasons = $stats['skip_reasons'] ?? [];
+        if ($skipReasons === []) {
+            return;
+        }
+
+        $this->writeLine('Skip reasons:');
+        foreach ($skipReasons as $group => $reasons) {
+            if ($reasons === []) {
+                continue;
+            }
+
+            $parts = [];
+            foreach ($reasons as $reason => $count) {
+                $parts[] = $reason . '=' . $count;
+            }
+            $this->writeLine(' - ' . ucfirst(str_replace('_', ' ', (string) $group)) . ': ' . implode(', ', $parts));
+        }
     }
 
     private function generatePublicUuid(): string
@@ -754,30 +959,36 @@ final class ImportLegacySqlCommand implements CommandInterface
         $needle = 'INSERT INTO `' . $tableName . '`';
         $buffer = '';
         $capturing = false;
+        $inString = false;
+        $escape = false;
 
         while (($line = fgets($handle)) !== false) {
             if (! $capturing) {
                 if (strpos($line, $needle) !== false) {
                     $capturing = true;
                     $buffer = $line;
-                    if (strpos($line, ';') !== false) {
+                    if ($this->statementTerminated($line, $inString, $escape)) {
                         foreach ($this->parseInsertStatement($buffer, $tableName) as $row) {
                             yield $row;
                         }
                         $buffer = '';
                         $capturing = false;
+                        $inString = false;
+                        $escape = false;
                     }
                 }
                 continue;
             }
 
             $buffer .= $line;
-            if (strpos($line, ';') !== false) {
+            if ($this->statementTerminated($line, $inString, $escape)) {
                 foreach ($this->parseInsertStatement($buffer, $tableName) as $row) {
                     yield $row;
                 }
                 $buffer = '';
                 $capturing = false;
+                $inString = false;
+                $escape = false;
             }
         }
 
@@ -918,6 +1129,40 @@ final class ImportLegacySqlCommand implements CommandInterface
         }
 
         return $values;
+    }
+
+    private function statementTerminated(string $chunk, bool &$inString, bool &$escape): bool
+    {
+        $length = strlen($chunk);
+        for ($i = 0; $i < $length; $i++) {
+            $char = $chunk[$i];
+
+            if ($inString) {
+                if ($escape) {
+                    $escape = false;
+                    continue;
+                }
+                if ($char === '\\') {
+                    $escape = true;
+                    continue;
+                }
+                if ($char === "'") {
+                    $inString = false;
+                }
+                continue;
+            }
+
+            if ($char === "'") {
+                $inString = true;
+                continue;
+            }
+
+            if ($char === ';') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalizeSqlValue(string $value): mixed

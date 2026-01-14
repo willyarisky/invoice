@@ -82,6 +82,7 @@ class CustomersController
             $customers[$index]['total_label'] = Setting::formatMoney((float) ($customer['total_invoices'] ?? 0), $defaultCurrency);
             $customers[$index]['paid_label'] = Setting::formatMoney((float) ($customer['total_paid'] ?? 0), $defaultCurrency);
             $customers[$index]['overdue_label'] = Setting::formatMoney((float) ($customer['total_overdue'] ?? 0), $defaultCurrency);
+            $customers[$index]['can_delete'] = (int) ($customer['invoice_count'] ?? 0) === 0;
         }
 
         $paginator = new Paginator($customers, $total, $perPage, $page);
@@ -117,10 +118,12 @@ class CustomersController
     public function show(int $customer)
     {
         $layout = ViewData::appLayout();
+        $status = Session::get('customer_status');
         $emailStatus = Session::get('customer_email_status');
         $emailErrors = Session::get('customer_email_errors') ?? [];
         $emailOld = Session::get('customer_email_old') ?? [];
 
+        Session::remove('customer_status');
         Session::remove('customer_email_status');
         Session::remove('customer_email_errors');
         Session::remove('customer_email_old');
@@ -134,6 +137,13 @@ class CustomersController
             Session::set('customer_status', 'Customer not found.');
             return Response::redirect('/customers');
         }
+
+        $hasInvoices = DBML::table('invoices')->where('customer_id', $customer)->exists();
+        $hasTransactions = DBML::table('transactions as t')
+            ->leftJoin('invoices as i', 'i.id', '=', 't.invoice_id')
+            ->where('i.customer_id', $customer)
+            ->exists();
+        $canDelete = ! $hasInvoices && ! $hasTransactions;
 
         $invoices = DBML::table('invoices as i')
             ->select('i.id', 'i.invoice_no', 'i.date', 'i.due_date', 'i.status', 'i.currency', 'i.total')
@@ -224,6 +234,8 @@ class CustomersController
             'initials' => $initials,
             'invoiceRows' => $invoiceRows,
             'totalsLabels' => $totalsLabels,
+            'canDelete' => $canDelete,
+            'status' => $status,
             'emailStatus' => $emailStatus,
             'emailErrors' => $emailErrors,
             'emailOld' => $emailOld,
@@ -347,6 +359,38 @@ class CustomersController
         ]);
 
         Session::set('customer_status', 'Customer updated successfully.');
+
+        return Response::redirect('/customers');
+    }
+
+    public function delete(int $customer): Response
+    {
+        Session::remove('customer_status');
+
+        $record = DBML::table('customers')
+            ->select('id')
+            ->where('id', $customer)
+            ->first();
+
+        if ($record === null) {
+            Session::set('customer_status', 'Customer not found.');
+            return Response::redirect('/customers');
+        }
+
+        $hasInvoices = DBML::table('invoices')->where('customer_id', $customer)->exists();
+        $hasTransactions = DBML::table('transactions as t')
+            ->leftJoin('invoices as i', 'i.id', '=', 't.invoice_id')
+            ->where('i.customer_id', $customer)
+            ->exists();
+
+        if ($hasInvoices || $hasTransactions) {
+            Session::set('customer_status', 'Customer has related invoices or transactions and cannot be deleted.');
+            return Response::redirect('/customers/' . $customer);
+        }
+
+        DBML::table('customers')->where('id', $customer)->delete();
+
+        Session::set('customer_status', 'Customer deleted successfully.');
 
         return Response::redirect('/customers');
     }

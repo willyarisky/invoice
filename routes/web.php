@@ -4,7 +4,6 @@ use App\Controllers\Auth\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\Auth\EmailVerificationController;
 use App\Controllers\HomeController;
-use App\Controllers\Auth\PasswordResetController;
 use App\Controllers\Admin\UsersController as AdminUsersController;
 use App\Controllers\CustomersController;
 use App\Controllers\InvoicesController;
@@ -39,6 +38,7 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/customers', [CustomersController::class, 'store'])->name('customers.store');
     Router::post('/customers/{customer}/email', [CustomersController::class, 'sendEmail'])->name('customers.email');
     Router::post('/customers/{customer}/update', [CustomersController::class, 'update'])->name('customers.update');
+    Router::post('/customers/{customer}/delete', [CustomersController::class, 'delete'])->name('customers.delete');
     Router::get('/transactions', [TransactionsController::class, 'index'])->name('transactions.index');
     Router::get('/transactions/create', [TransactionsController::class, 'create'])->name('transactions.create');
     Router::get('/transactions/{transaction}', [TransactionsController::class, 'show'])->name('transactions.show');
@@ -50,6 +50,7 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::get('/vendors/{vendor}/edit', [VendorsController::class, 'edit'])->name('vendors.edit');
     Router::post('/vendors', [VendorsController::class, 'store'])->name('vendors.store');
     Router::post('/vendors/{vendor}/update', [VendorsController::class, 'update'])->name('vendors.update');
+    Router::post('/vendors/{vendor}/delete', [VendorsController::class, 'delete'])->name('vendors.delete');
     Router::get('/vendors/{vendor}', [VendorsController::class, 'show'])->name('vendors.show');
     Router::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Router::post('/settings/company', [SettingsController::class, 'updateCompany'])->name('settings.company.update');
@@ -85,12 +86,6 @@ Router::group(['middleware' => GuestMiddleware::class, 'name' => 'auth'], functi
     Router::get('/login', [AuthController::class, 'showLogin'])->name('login.show');
     Router::post('/login', [AuthController::class, 'login'])->name('login.attempt');
 
-    Router::group(['prefix' => '/password', 'name' => 'password'], function () {
-        Router::get('/forgot', [PasswordResetController::class, 'request'])->name('forgot');
-        Router::post('/forgot', [PasswordResetController::class, 'email'])->name('email');
-        Router::get('/reset/{token}', [PasswordResetController::class, 'show'])->name('reset');
-        Router::post('/reset', [PasswordResetController::class, 'update'])->name('update');
-    });
 });
 
 // Routes that support both guests and authenticated users

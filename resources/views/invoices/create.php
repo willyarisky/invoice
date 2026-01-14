@@ -100,7 +100,7 @@
             x-init="init()"
         >
             <div class="grid gap-6 lg:grid-cols-[1.1fr_1.4fr]">
-                <div class="space-y-3">
+                <div class="space-y-1">
                     <div class="flex items-center gap-1 text-sm font-semibold text-stone-700">
                         <span>Customer</span>
                         <span class="text-rose-500">*</span>
@@ -112,30 +112,29 @@
                                 <option value="{{ $customer['id'] }}" @if ((string) $customer['id'] === (string) $selectedCustomer) selected @endif>{{ $customer['name'] ?? 'Unnamed customer' }}</option>
                             @endforeach
                         </select>
-                        <div class="mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500" x-cloak x-show="customerId === ''">
-                            <svg class="h-9 w-9 text-stone-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M12 11a4 4 0 1 0-0.01 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                <path d="M4 20c1.5-3 5-4 8-4s6.5 1 8 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                <path d="M19 8v4M21 10h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                            </svg>
+                        <div class="mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500 max-h-[100px]" x-cloak x-show="customerId === ''">
                             <span class="mt-2 text-base font-semibold text-stone-600">Add a customer</span>
                             <span class="mt-1 text-xs text-stone-400">Choose from your list to attach details.</span>
                         </div>
                         <div class="mt-4 text-sm text-stone-500 whitespace-pre-line" x-cloak x-show="customerId !== ''" x-text="customerAddress || 'No address on file'"></div>
                     </div>
                 </div>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <label class="flex flex-col text-sm font-medium text-stone-700">
-                        <span class="flex items-center gap-1">Invoice Date <span class="text-rose-500">*</span></span>
-                        <input type="date" name="date" value="{{ $formValues['date'] ?? '' }}" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2 text-stone-700" />
-                    </label>
-                    <label class="flex flex-col text-sm font-medium text-stone-700">
-                        <span class="flex items-center gap-1">Invoice Number <span class="text-rose-500">*</span></span>
-                        <input type="text" name="invoice_no" value="{{ $invoiceNumber }}" readonly class="mt-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-stone-700" />
-                    </label>
-                    <label class="flex flex-col text-sm font-medium text-stone-700 sm:col-span-2">
+                <div class="flex flex-col gap-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="flex flex-col text-sm font-medium text-stone-700">
+                            <span class="flex items-center gap-1">Invoice Date <span class="text-rose-500">*</span></span>
+                            <input type="date" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2" />
+                        </label>
+                        
+                        <label class="flex flex-col text-sm font-medium text-stone-700">
+                            <span class="flex items-center gap-1">Invoice Number <span class="text-rose-500">*</span></span>
+                            <input type="text" class="mt-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2" />
+                        </label>
+                    </div>
+
+                    <label class="flex flex-col w-1/2 text-sm font-medium text-stone-700">
                         <span class="flex items-center gap-1">Due Date <span class="text-rose-500">*</span></span>
-                        <input type="date" name="due_date" value="{{ $formValues['due_date'] ?? '' }}" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2 text-stone-700" />
+                        <input type="date" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2" />
                     </label>
                 </div>
             </div>
@@ -186,7 +185,7 @@
             <div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                 <label class="flex flex-col text-sm font-medium text-stone-700">
                     Notes
-                    <textarea name="notes" rows="5" class="mt-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-stone-700">{{ $formValues['notes'] ?? '' }}</textarea>
+                    <textarea name="notes" rows="8" class="mt-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-stone-700 max-w-[70%]">{{ $formValues['notes'] ?? '' }}</textarea>
                 </label>
                 <div class="space-y-4">
                     <label class="flex flex-col text-sm font-medium text-stone-700">

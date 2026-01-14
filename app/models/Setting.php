@@ -229,7 +229,7 @@ class Setting extends Model
     {
         $formatted = number_format($amount, 2, '.', ',');
 
-        return self::currencyPrefixFor($currency ?? self::getValue('default_currency')) . ' '. $formatted;
+        return self::currencyPrefixFor($currency ?? self::getValue('default_currency')) . $formatted;
     }
 
     /**

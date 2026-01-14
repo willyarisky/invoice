@@ -8,8 +8,6 @@
         <a href="{{ route('settings.email.index') }}" class="{{ $settingsLinkBase }} {{ ($settingsActive ?? '') === 'email' ? 'bg-stone-100 text-stone-900 font-semibold' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900' }}">Email Settings</a>
         <a href="{{ route('settings.categories.index') }}" class="{{ $settingsLinkBase }} {{ ($settingsActive ?? '') === 'categories' ? 'bg-stone-100 text-stone-900 font-semibold' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900' }}">Categories</a>
         <a href="{{ route('settings.taxes.index') }}" class="{{ $settingsLinkBase }} {{ ($settingsActive ?? '') === 'taxes' ? 'bg-stone-100 text-stone-900 font-semibold' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900' }}">Taxes</a>
-        @if (!empty($isAdmin))
-            <a href="{{ route('settings.admin.users') }}" class="{{ $settingsLinkBase }} {{ ($settingsActive ?? '') === 'admin' ? 'bg-stone-100 text-stone-900 font-semibold' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900' }}">Admin Users</a>
-        @endif
+        <a href="{{ route('settings.admin.users') }}" class="{{ $settingsLinkBase }} {{ ($settingsActive ?? '') === 'admin' ? 'bg-stone-100 text-stone-900 font-semibold' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900' }}">Admin Users</a>
     </nav>
 </aside>

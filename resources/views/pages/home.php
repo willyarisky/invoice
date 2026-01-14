@@ -22,22 +22,58 @@
     <div class="grid gap-6 lg:grid-cols-2">
         <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
             <div>
-                <p class="text-lg font-semibold text-stone-900">Total value: <span class="font-semibold text-stone-900">{{ $invoiceAmountTotalLabel ?? '' }}</span></p>
-                <div class="mt-3 h-2 rounded-full bg-stone-200">
-                    <div class="h-2 rounded-full bg-indigo-500" style="width: {{ $invoiceAmountProgress ?? 0 }}%"></div>
-                </div>
+                <p class="text-lg font-semibold text-stone-900">Total value</p>
                 <div class="mt-4 grid grid-cols-3 text-sm text-stone-500">
                     <div>
                         <p class="text-xs uppercase tracking-widest text-stone-400">Draft</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['draft'] ?? '' }}</p>
+                        <div class="mt-2 space-y-1">
+                            @if (!empty($invoiceStatusTotalsCurrencyLabels['draft'] ?? []))
+                                @foreach (($invoiceStatusTotalsCurrencyLabels['draft'] ?? []) as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @else
+                                <span class="font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['draft'] ?? '' }}</span>
+                            @endif
+                        </div>
                     </div>
                     <div>
                         <p class="text-xs uppercase tracking-widest text-stone-400">Sent</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['sent'] ?? '' }}</p>
+                        <div class="mt-2 space-y-1">
+                            @if (!empty($invoiceStatusTotalsCurrencyLabels['sent'] ?? []))
+                                @foreach (($invoiceStatusTotalsCurrencyLabels['sent'] ?? []) as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @else
+                                <span class="font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['sent'] ?? '' }}</span>
+                            @endif
+                        </div>
                     </div>
                     <div>
                         <p class="text-xs uppercase tracking-widest text-stone-400">Paid</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['paid'] ?? '' }}</p>
+                        <div class="mt-2 space-y-1">
+                            @if (!empty($invoiceStatusTotalsCurrencyLabels['paid'] ?? []))
+                                @foreach (($invoiceStatusTotalsCurrencyLabels['paid'] ?? []) as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @else
+                                <span class="font-semibold text-stone-900">{{ $invoiceStatusTotalsLabels['paid'] ?? '' }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -45,22 +81,58 @@
 
         <div class="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-sm">
             <div>
-                <p class="text-lg font-semibold text-stone-900">Total expenses: <span class="font-semibold text-stone-900">{{ $expenseTotalLabel ?? '' }}</span></p>
-                <div class="mt-3 h-2 rounded-full bg-stone-200">
-                    <div class="h-2 rounded-full bg-rose-400" style="width: {{ $expenseProgress ?? 0 }}%"></div>
-                </div>
+                <p class="text-lg font-semibold text-stone-900">Total expenses</p>
                 <div class="mt-4 grid grid-cols-3 text-sm text-stone-500">
                     <div>
-                        <p class="text-xs uppercase tracking-widest text-stone-400">Count</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $expenseCountTotal ?? 0 }}</p>
-                    </div>
-                    <div>
                         <p class="text-xs uppercase tracking-widest text-stone-400">Average</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $expenseAverageLabel ?? '' }}</p>
+                        <div class="mt-2 space-y-1">
+                            @if (!empty($expenseAverageByCurrency ?? []))
+                                @foreach (($expenseAverageByCurrency ?? []) as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @else
+                                <span class="font-semibold text-stone-900">{{ $expenseAverageLabel ?? '' }}</span>
+                            @endif
+                        </div>
                     </div>
                     <div>
                         <p class="text-xs uppercase tracking-widest text-stone-400">Largest</p>
-                        <p class="mt-1 font-semibold text-stone-900">{{ $expenseMaxLabel ?? '' }}</p>
+                        <div class="mt-2 space-y-1">
+                            @if (!empty($expenseMaxByCurrency ?? []))
+                                @foreach (($expenseMaxByCurrency ?? []) as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @else
+                                <span class="font-semibold text-stone-900">{{ $expenseMaxLabel ?? '' }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-stone-400">Total</p>
+                        @if (!empty($expenseCurrencyBreakdown ?? []))
+                            <div class="mt-2 space-y-1">
+                                @foreach ($expenseCurrencyBreakdown as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <span class="mt-2 block font-semibold text-stone-900">{{ $expenseTotalLabel ?? '' }}</span>
+                        @endif
                     </div>
                 </div>
             </div>

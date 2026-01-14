@@ -19,11 +19,35 @@
             <a href="{{ route('customers.edit', ['customer' => $customer['id']]) }}" class="rounded-xl border border-stone-200 px-5 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
                 Edit
             </a>
+            <form method="POST" action="{{ route('customers.delete', ['customer' => $customer['id']]) }}" @if (!empty($canDelete)) data-confirm="Delete this customer?" @endif>
+                <button
+                    type="submit"
+                    class="rounded-xl border border-stone-200 px-5 py-2 text-sm font-semibold {{ !empty($canDelete) ? 'text-rose-600 hover:bg-rose-50' : 'cursor-not-allowed text-stone-300' }}"
+                    @if (empty($canDelete)) disabled title="Cannot delete while invoices or transactions exist" @endif
+                >
+                    Delete
+                </button>
+            </form>
             <a href="{{ route('customers.index') }}" class="rounded-xl border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-50">
                 Back
             </a>
         </div>
     </div>
+
+    @if (!empty($status ?? ''))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" x-data="{ open: true }" x-show="open">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                    {{ $status ?? '' }}
+                </div>
+                <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    @endif
 
     <div class="grid items-start gap-6 lg:grid-cols-[220px_1fr]">
         <div class="space-y-6">

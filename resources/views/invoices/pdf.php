@@ -97,7 +97,7 @@
         }
 
         .label {
-            font-size: 12px;
+            font-size: 14px;
             text-transform: uppercase;
             color: #a8a29e;
             margin: 0 0 8px;
@@ -111,13 +111,14 @@
         }
 
         .bill-line {
-            font-size: 12px;
+            font-size: 14px;
             color: #78716c;
             margin: 2px 0;
+            line-height: 1.5;
         }
 
         .invoice-details {
-            max-width: 60%;
+            max-width: 25%;
             margin-left: auto;
             font-size: 14px;
             color: #44403c;
@@ -131,7 +132,7 @@
         }
 
         .detail-label {
-            font-size: 12px;
+            font-size: 14px;
             text-transform: uppercase;
             color: #a8a29e;
             padding-right: 20px;
@@ -155,17 +156,12 @@
             font-weight: 700;
             color: #1c1917;
             border-bottom: 2px solid #e7e5e4;
-            padding: 12px 0;
+            padding: 14px 0;
         }
 
         tbody td {
-            padding: 12px 0;
+            padding: 14px 0;
             border-bottom: 1px solid #e7e5e4;
-        }
-
-        tbody td:first-child {
-            color: #1c1917;
-            font-weight: 600;
         }
 
         .text-center {
@@ -177,11 +173,11 @@
         }
 
         .invoice-footer {
-            margin-top: 16px;
+            margin-top: 24px;
         }
 
         .notes {
-            margin-top: 80px;
+            margin-top: 120px;
         }
 
         .notes-title {
@@ -212,7 +208,6 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 0;
-            font-size: 14px;
             color: #57534e;
         }
 
@@ -233,9 +228,9 @@
         .totals-total td {
             border-top: 1px solid #e7e5e4;
             padding-top: 10px;
-            font-size: 18px;
             font-weight: 600;
             color: #1c1917;
+            border-bottom: none !important;
         }
     </style>
 </head>
@@ -272,7 +267,7 @@
                     </div>
                     <div class="invoice-details">
                         <div class="detail-row">
-                            <span class="detail-label">Invoice Number</span>
+                            <span class="detail-label">Invoice No.</span>
                             <span class="detail-value">{{ $invoiceNo }}</span>
                         </div>
                         <div class="detail-row">
@@ -289,10 +284,10 @@
                 <table style="margin-top:20px">
                     <thead>
                         <tr>
-                            <th style="text-align:left;">Items</th>
-                            <th class="text-center">Quantity</th>
-                            <th style="text-align:left;">Price</th>
-                            <th class="text-right">Amount</th>
+                            <th style="text-align:left;width:70%;">Items</th>
+                            <th class="text-center;" style="width:10%;">QTY</th>
+                            <th style="text-align:left;width:10%;">Price</th>
+                            <th class="text-right" style="width:10%;">Amount</th>
                         </tr>
                     </thead>
                     <tbody>

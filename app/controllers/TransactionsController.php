@@ -42,11 +42,14 @@ class TransactionsController
                 't.source',
                 't.vendor_id',
                 't.invoice_id',
+                't.category_id',
                 'v.name as vendor_name',
+                'cat.name as category_name',
                 'i.invoice_no',
                 'c.name as customer_name'
             )
             ->leftJoin('vendors as v', 'v.id', '=', 't.vendor_id')
+            ->leftJoin('categories as cat', 'cat.id', '=', 't.category_id')
             ->leftJoin('invoices as i', 'i.id', '=', 't.invoice_id')
             ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
             ->orderByDesc('t.date')
@@ -88,6 +91,7 @@ class TransactionsController
                 'customer_name' => $transaction['customer_name'] ?? '—',
                 'description' => $transaction['description'] ?? '',
                 'vendor_name' => $transaction['vendor_name'] ?? '—',
+                'category_name' => $transaction['category_name'] ?? '—',
                 'amount_label' => $amountLabel,
                 'amount_class' => $type === 'expense' ? 'text-rose-600' : 'text-emerald-600',
             ];
