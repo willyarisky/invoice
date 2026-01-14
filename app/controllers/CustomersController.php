@@ -94,7 +94,7 @@ class CustomersController
 
         return view('customers/index', array_merge($layout, [
             'customers' => $customers,
-            'status' => $status,
+            'status' => $flashStatus,
             'totals' => $totals,
             'pagination' => $pagination,
         ]));
