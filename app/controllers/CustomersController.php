@@ -118,7 +118,7 @@ class CustomersController
     public function show(int $customer)
     {
         $layout = ViewData::appLayout();
-        $status = Session::get('customer_status');
+        $flashStatus = Session::get('customer_status');
         $emailStatus = Session::get('customer_email_status');
         $emailErrors = Session::get('customer_email_errors') ?? [];
         $emailOld = Session::get('customer_email_old') ?? [];
