@@ -14,7 +14,6 @@ class ViewData
         $request = Request::instance();
         $path = trim($request->path(), '/');
         $currentUser = Auth::user();
-        $isAdmin = true;
 
         $navItems = [
             ['label' => 'Dashboard', 'href' => route('home'), 'pattern' => '/^$/'],
@@ -34,7 +33,6 @@ class ViewData
         return [
             'brandName' => $brandName,
             'currentUser' => $currentUser,
-            'isAdmin' => $isAdmin,
             'navItems' => $navItems,
             'settingsActive' => (bool) preg_match('/^settings/', $path),
             'settingsLinkBase' => 'flex items-center rounded-xl px-3 py-2 text-sm',

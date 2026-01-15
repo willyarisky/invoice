@@ -41,15 +41,6 @@ return new class extends Migration
             $table->index('invoice_id');
         });
 
-        Schema::create('admin', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email');
-            $table->string('password_hash');
-            $table->datetime('last_login', true);
-            $table->timestamps();
-            $table->unique('email');
-        });
     }
 
     public function down(): void
@@ -57,6 +48,5 @@ return new class extends Migration
         Schema::dropIfExists('invoice_items');
         Schema::dropIfExists('invoices');
         Schema::dropIfExists('customers');
-        Schema::dropIfExists('admin');
     }
 };

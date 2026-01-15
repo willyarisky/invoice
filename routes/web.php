@@ -4,15 +4,14 @@ use App\Controllers\Auth\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\Auth\EmailVerificationController;
 use App\Controllers\HomeController;
-use App\Controllers\Admin\UsersController as AdminUsersController;
 use App\Controllers\CustomersController;
 use App\Controllers\InvoicesController;
 use App\Controllers\SettingsController;
+use App\Controllers\Settings\UsersController as SettingsUsersController;
 use App\Controllers\TransactionsController;
 use App\Controllers\VendorsController;
 use App\Middlewares\Auth as AuthMiddleware;
 use App\Middlewares\Guest as GuestMiddleware;
-use App\Middlewares\Role as RoleMiddleware;
 use Zero\Lib\Router;
 
 Router::group(['middleware' => [AuthMiddleware::class]], function () {
@@ -69,17 +68,15 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/settings/taxes', [SettingsController::class, 'storeTax'])->name('settings.taxes.store');
     Router::post('/settings/taxes/{tax}/update', [SettingsController::class, 'updateTax'])->name('settings.taxes.update');
     Router::post('/settings/taxes/{tax}/delete', [SettingsController::class, 'deleteTax'])->name('settings.taxes.delete');
+    Router::get('/settings/users', [SettingsUsersController::class, 'index'])->name('settings.users.index');
+    Router::post('/settings/users', [SettingsUsersController::class, 'store'])->name('settings.users.store');
+    Router::post('/settings/users/{user}/update', [SettingsUsersController::class, 'update'])->name('settings.users.update');
+    Router::post('/settings/users/{user}/delete', [SettingsUsersController::class, 'delete'])->name('settings.users.delete');
 });
 
 Router::get('/invoices/{invoice}/email-open/{token}', [InvoicesController::class, 'trackEmailOpen'])->name('invoices.email.open');
 Router::get('/invoices/public/{uuid}', [InvoicesController::class, 'publicView'])->name('invoices.public');
 
-Router::group(['middleware' => [AuthMiddleware::class, [RoleMiddleware::class, 'admin']]], function () {
-    Router::get('/settings/admin', [AdminUsersController::class, 'create'])->name('settings.admin.users');
-    Router::post('/settings/admin', [AdminUsersController::class, 'store'])->name('settings.admin.users.store');
-    Router::post('/settings/admin/{user}/update', [AdminUsersController::class, 'update'])->name('settings.admin.users.update');
-    Router::post('/settings/admin/{user}/delete', [AdminUsersController::class, 'delete'])->name('settings.admin.users.delete');
-});
 
 // Guest-only authentication routes
 Router::group(['middleware' => GuestMiddleware::class, 'name' => 'auth'], function () {
@@ -100,15 +97,3 @@ Router::group(['middleware' => [AuthMiddleware::class], 'name' => 'auth'], funct
     Router::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Router::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
-
-Router::group(
-    [
-        'prefix' => '/admin',
-        'name' => 'admin',
-        'middleware' => [AuthMiddleware::class, [RoleMiddleware::class, 'admin']],
-    ],
-    function () {
-        Router::get('/users', [AdminUsersController::class, 'create'])->name('users.create');
-        Router::post('/users', [AdminUsersController::class, 'store'])->name('users.store');
-    }
-);

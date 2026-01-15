@@ -273,12 +273,6 @@
                         @endif
                     </label>
 
-                    @if ($ccAdminDefault)
-                        <label class="inline-flex items-center gap-2 text-sm text-stone-600">
-                            <input type="checkbox" name="cc_admin" value="1" class="h-4 w-4 rounded-xl border-stone-300 text-stone-700" @if (!empty($emailOld['cc_admin'])) checked @endif>
-                            CC admin ({{ $adminEmail }})
-                        </label>
-                    @endif
                     @if ($currentUserEmail !== '')
                         <label class="inline-flex items-center gap-2 text-sm text-stone-600">
                             <input type="checkbox" name="cc_myself" value="1" class="h-4 w-4 rounded-xl border-stone-300 text-stone-700" @if (!empty($emailOld['cc_myself'])) checked @endif>

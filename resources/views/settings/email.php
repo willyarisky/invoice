@@ -5,7 +5,6 @@
     @include('settings/partials/sidebar', [
         'settingsActive' => $settingsActive,
         'settingsLinkBase' => $settingsLinkBase,
-        'isAdmin' => $isAdmin,
     ])
 
     <div class="space-y-6">

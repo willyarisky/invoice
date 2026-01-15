@@ -47,7 +47,7 @@ class EmailVerificationController
         $user = User::query()->where('email', $email)->first();
 
         if (! $user instanceof User) {
-            Session::set('status', 'We could not find a user with that email. Please contact your administrator.');
+            Session::set('status', 'We could not find a user with that email. Please contact the account owner.');
             return Response::redirect('/login');
         }
 

@@ -33,7 +33,6 @@
     @include('settings/partials/sidebar', [
         'settingsActive' => $settingsActive,
         'settingsLinkBase' => $settingsLinkBase,
-        'isAdmin' => $isAdmin,
     ])
 
     <div class="space-y-6">
@@ -47,8 +46,6 @@
                 </button>
             </div>
         </div>
-        <div class="rounded-xl border border-stone-200 bg-white px-6 py-6 shadow-sm">
-
             @if (!empty($status ?? ''))
                 <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" x-data="{ open: true }" x-show="open">
                     <div class="flex items-start justify-between gap-3">
@@ -79,61 +76,60 @@
                 </div>
             @endif
 
-            <div class="mt-4 overflow-hidden rounded-xl border border-stone-200">
-                <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
-                    <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
+        <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
+                <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
+                    <tr>
+                        <th class="px-4 py-3">Code</th>
+                        <th class="px-4 py-3">Name</th>
+                        <th class="px-4 py-3">Symbol</th>
+                        <th class="px-4 py-3">Default</th>
+                        <th class="px-4 py-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100">
+                    @foreach ($currencies as $currency)
                         <tr>
-                            <th class="px-4 py-3">Code</th>
-                            <th class="px-4 py-3">Name</th>
-                            <th class="px-4 py-3">Symbol</th>
-                            <th class="px-4 py-3">Default</th>
-                            <th class="px-4 py-3 text-right">Action</th>
+                            <td class="px-4 py-3 font-semibold text-stone-900">{{ $currency['code'] ?? '' }}</td>
+                            <td class="px-4 py-3">{{ $currency['name'] ?? '' }}</td>
+                            <td class="px-4 py-3">{{ $currency['symbol'] ?? '' }}</td>
+                            <td class="px-4 py-3">
+                                @if (!empty($currency['is_default']))
+                                    <span class="inline-flex items-center rounded-xl bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Default</span>
+                                @else
+                                    <form method="POST" action="{{ route('settings.currency.update') }}">
+                                        <input type="hidden" name="default_currency" value="{{ $currency['code'] ?? '' }}">
+                                        <button type="submit" class="text-xs font-semibold text-stone-500 hover:text-stone-800">Set default</button>
+                                    </form>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex justify-end gap-4">
+                                    <button
+                                        type="button"
+                                        class="text-sm font-semibold text-stone-500 hover:text-stone-800"
+                                        data-action="{{ $currency['edit_action'] ?? '' }}"
+                                        data-code="{{ $currency['code'] ?? '' }}"
+                                        data-name="{{ $currency['name'] ?? '' }}"
+                                        data-symbol="{{ $currency['symbol'] ?? '' }}"
+                                        data-is-default="{{ $currency['edit_is_default'] ?? '0' }}"
+                                        x-on:click="openEdit($el.dataset.action, $el.dataset.code, $el.dataset.name, $el.dataset.symbol, $el.dataset.isDefault)"
+                                    >
+                                        Edit
+                                    </button>
+                                    <form method="POST" action="{{ route('settings.currency.delete', ['currency' => $currency['id']]) }}">
+                                        <button type="submit" class="text-sm font-semibold text-rose-500 hover:text-rose-600">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-stone-100">
-                        @foreach ($currencies as $currency)
-                            <tr>
-                                <td class="px-4 py-3 font-semibold text-stone-900">{{ $currency['code'] ?? '' }}</td>
-                                <td class="px-4 py-3">{{ $currency['name'] ?? '' }}</td>
-                                <td class="px-4 py-3">{{ $currency['symbol'] ?? '' }}</td>
-                                <td class="px-4 py-3">
-                                    @if (!empty($currency['is_default']))
-                                        <span class="inline-flex items-center rounded-xl bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Default</span>
-                                    @else
-                                        <form method="POST" action="{{ route('settings.currency.update') }}">
-                                            <input type="hidden" name="default_currency" value="{{ $currency['code'] ?? '' }}">
-                                            <button type="submit" class="text-xs font-semibold text-stone-500 hover:text-stone-800">Set default</button>
-                                        </form>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 text-right">
-                                    <div class="flex justify-end gap-4">
-                                        <button
-                                            type="button"
-                                            class="text-sm font-semibold text-stone-500 hover:text-stone-800"
-                                            data-action="{{ $currency['edit_action'] ?? '' }}"
-                                            data-code="{{ $currency['code'] ?? '' }}"
-                                            data-name="{{ $currency['name'] ?? '' }}"
-                                            data-symbol="{{ $currency['symbol'] ?? '' }}"
-                                            data-is-default="{{ $currency['edit_is_default'] ?? '0' }}"
-                                            x-on:click="openEdit($el.dataset.action, $el.dataset.code, $el.dataset.name, $el.dataset.symbol, $el.dataset.isDefault)"
-                                        >
-                                            Edit
-                                        </button>
-                                        <form method="POST" action="{{ route('settings.currency.delete', ['currency' => $currency['id']]) }}">
-                                            <button type="submit" class="text-sm font-semibold text-rose-500 hover:text-rose-600">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-4 py-6 text-center text-stone-500">No currencies added yet.</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-6 text-center text-stone-500">No currencies added yet.</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

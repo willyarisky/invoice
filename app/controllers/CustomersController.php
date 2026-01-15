@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Models\Admin;
 use App\Models\Setting;
 use App\Services\ViewData;
 use App\Controllers\Concerns\BuildsPagination;
@@ -214,14 +213,12 @@ class CustomersController
             ];
         }
 
-        $adminEmail = $this->resolveAdminEmail();
         $brandName = (string) ($layout['brandName'] ?? 'Invoice App');
         $defaultSubject = 'Message from ' . $brandName;
         $defaultMessage = "Hi {$customerName},\n\nI wanted to reach out regarding your account.\n\nThanks,\n{$brandName}";
         $emailSubject = $emailOld['subject'] ?? $defaultSubject;
         $emailMessage = $emailOld['message'] ?? $defaultMessage;
         $autoOpenEmailModal = !empty($emailErrors);
-        $ccAdminDefault = $adminEmail !== '';
         $currentUserEmail = '';
         $currentUser = $layout['currentUser'] ?? null;
         if ($currentUser && isset($currentUser->email)) {
@@ -242,9 +239,7 @@ class CustomersController
             'emailSubject' => $emailSubject,
             'emailMessage' => $emailMessage,
             'autoOpenEmailModal' => $autoOpenEmailModal,
-            'ccAdminDefault' => $ccAdminDefault,
             'currentUserEmail' => $currentUserEmail,
-            'adminEmail' => $adminEmail,
         ]));
     }
 
@@ -421,7 +416,6 @@ class CustomersController
             $data = $request->validate([
                 'subject' => ['required', 'string', 'min:3', 'max:150'],
                 'message' => ['required', 'string', 'min:3'],
-                'cc_admin' => ['boolean'],
                 'cc_myself' => ['boolean'],
             ]);
         } catch (ValidationException $exception) {
@@ -438,24 +432,18 @@ class CustomersController
 
         $subject = trim((string) $data['subject']);
         $message = trim((string) $data['message']);
-        $adminEmail = $this->resolveAdminEmail();
-        $ccAdmin = (bool) ($data['cc_admin'] ?? false);
         $bccMyself = (bool) ($data['cc_myself'] ?? false);
         $currentUserEmail = $this->resolveCurrentUserEmail();
 
         $safeBody = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
         $html = '<div style="font-family: Arial, sans-serif; line-height: 1.6;">' . $safeBody . '</div>';
 
-        Mail::send(function ($mail) use ($customerEmail, $record, $subject, $html, $ccAdmin, $adminEmail, $bccMyself, $currentUserEmail) {
+        Mail::send(function ($mail) use ($customerEmail, $record, $subject, $html, $bccMyself, $currentUserEmail) {
             $mail->to($customerEmail, (string) ($record['name'] ?? 'Customer'))
                 ->subject($subject)
                 ->html($html);
 
-            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $customerEmail) {
-                $mail->cc($adminEmail);
-            }
-
-            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $customerEmail) {
+            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $customerEmail) {
                 $mail->bcc($currentUserEmail);
             }
         });
@@ -463,25 +451,6 @@ class CustomersController
         Session::set('customer_email_status', 'Email sent successfully.');
 
         return Response::redirect('/customers/' . $customer);
-    }
-
-    private function resolveAdminEmail(): string
-    {
-        $user = Auth::user();
-        if (! $user || empty($user->email)) {
-            return '';
-        }
-
-        $email = strtolower((string) $user->email);
-        if ($email === '') {
-            return '';
-        }
-
-        if (Admin::query()->where('email', $email)->exists()) {
-            return $email;
-        }
-
-        return '';
     }
 
     private function resolveCurrentUserEmail(): string

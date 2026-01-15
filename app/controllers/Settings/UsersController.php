@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controllers\Admin;
+namespace App\Controllers\Settings;
 
 use App\Models\User;
 use App\Services\ViewData;
@@ -13,18 +13,18 @@ use Zero\Lib\Validation\ValidationException;
 
 class UsersController
 {
-    public function create(): Response
+    public function index(): Response
     {
         $layout = ViewData::appLayout();
-        $status = Session::get('admin_user_status');
-        $errors = Session::get('admin_user_errors') ?? [];
-        $old = Session::get('admin_user_old') ?? [];
-        $editId = Session::get('admin_user_edit_id');
+        $status = Session::get('settings_user_status');
+        $errors = Session::get('settings_user_errors') ?? [];
+        $old = Session::get('settings_user_old') ?? [];
+        $editId = Session::get('settings_user_edit_id');
 
-        Session::remove('admin_user_status');
-        Session::remove('admin_user_errors');
-        Session::remove('admin_user_old');
-        Session::remove('admin_user_edit_id');
+        Session::remove('settings_user_status');
+        Session::remove('settings_user_errors');
+        Session::remove('settings_user_old');
+        Session::remove('settings_user_edit_id');
 
         $users = DBML::table('users')
             ->select('id', 'name', 'email', 'email_verified_at', 'created_at')
@@ -32,46 +32,51 @@ class UsersController
             ->limit(25)
             ->get();
 
+        $autoOpenAddModal = !empty($errors) && empty($editId);
         $autoOpenEditModal = !empty($editId);
-        $createOld = empty($editId) ? ($old ?? []) : [];
+        $addOld = empty($editId) ? ($old ?? []) : [];
         $editOld = !empty($editId) ? ($old ?? []) : [];
-        $editActionValue = $autoOpenEditModal ? route('settings.admin.users.update', ['user' => $editId]) : '';
+        $editActionValue = $autoOpenEditModal ? route('settings.users.update', ['user' => $editId]) : '';
         $editActionJson = json_encode($editActionValue, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $editNameJson = json_encode($editOld['name'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $editEmailJson = json_encode($editOld['email'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
         $userRows = [];
         foreach ($users as $user) {
+            $verifiedAt = $user['email_verified_at'] ?? null;
             $userRows[] = [
                 'id' => $user['id'] ?? null,
                 'name' => $user['name'] ?? 'User',
                 'email' => $user['email'] ?? 'N/A',
-                'email_verified_at' => $user['email_verified_at'] ?? null,
+                'email_verified_at' => $verifiedAt,
+                'verified_label' => $verifiedAt ? 'Verified' : 'Pending',
+                'verified_class' => $verifiedAt ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700',
                 'created_at' => $user['created_at'] ?? '',
-                'edit_action' => route('settings.admin.users.update', ['user' => $user['id'] ?? 0]),
+                'edit_action' => route('settings.users.update', ['user' => $user['id'] ?? 0]),
             ];
         }
 
-        return view('admin/users/create', array_merge($layout, [
+        return view('settings/users', array_merge($layout, [
             'status' => $status,
             'errors' => $errors,
-            'createOld' => $createOld,
+            'addOld' => $addOld,
             'editOld' => $editOld,
             'editId' => $editId,
             'users' => $userRows,
+            'autoOpenAddModal' => $autoOpenAddModal,
             'autoOpenEditModal' => $autoOpenEditModal,
             'editActionJson' => $editActionJson !== false ? $editActionJson : '""',
             'editNameJson' => $editNameJson !== false ? $editNameJson : '""',
             'editEmailJson' => $editEmailJson !== false ? $editEmailJson : '""',
-            'settingsActive' => 'admin',
+            'settingsActive' => 'users',
         ]));
     }
 
     public function store(Request $request): Response
     {
-        Session::remove('admin_user_errors');
-        Session::remove('admin_user_old');
-        Session::remove('admin_user_status');
+        Session::remove('settings_user_errors');
+        Session::remove('settings_user_old');
+        Session::remove('settings_user_status');
 
         try {
             $data = $request->validate(
@@ -95,13 +100,13 @@ class UsersController
                 $exception->errors()
             );
 
-            Session::set('admin_user_errors', $messages);
-            Session::set('admin_user_old', [
+            Session::set('settings_user_errors', $messages);
+            Session::set('settings_user_old', [
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
             ]);
 
-            return Response::redirect('/settings/admin');
+            return Response::redirect('/settings/users');
         }
 
         $payload = [
@@ -112,16 +117,16 @@ class UsersController
         ];
 
         User::create($payload);
-        Session::set('admin_user_status', 'User created successfully.');
+        Session::set('settings_user_status', 'User created successfully.');
 
-        return Response::redirect('/settings/admin');
+        return Response::redirect('/settings/users');
     }
 
     public function update(int $user, Request $request): Response
     {
-        Session::remove('admin_user_errors');
-        Session::remove('admin_user_old');
-        Session::remove('admin_user_status');
+        Session::remove('settings_user_errors');
+        Session::remove('settings_user_old');
+        Session::remove('settings_user_status');
 
         $rules = [
             'name' => ['required', 'string', 'min:3'],
@@ -142,23 +147,23 @@ class UsersController
                 $exception->errors()
             );
 
-            Session::set('admin_user_errors', $messages);
-            Session::set('admin_user_old', [
+            Session::set('settings_user_errors', $messages);
+            Session::set('settings_user_old', [
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
             ]);
-            Session::set('admin_user_edit_id', $user);
+            Session::set('settings_user_edit_id', $user);
 
-            return Response::redirect('/settings/admin');
+            return Response::redirect('/settings/users');
         }
 
         /** @var User|null $record */
         $record = User::query()->where('id', $user)->first();
         if (! $record instanceof User) {
-            Session::set('admin_user_errors', ['email' => 'User not found.']);
-            Session::set('admin_user_edit_id', $user);
+            Session::set('settings_user_errors', ['email' => 'User not found.']);
+            Session::set('settings_user_edit_id', $user);
 
-            return Response::redirect('/settings/admin');
+            return Response::redirect('/settings/users');
         }
 
         $payload = [
@@ -172,30 +177,30 @@ class UsersController
 
         $record->update($payload);
 
-        Session::set('admin_user_status', 'User updated successfully.');
+        Session::set('settings_user_status', 'User updated successfully.');
 
-        return Response::redirect('/settings/admin');
+        return Response::redirect('/settings/users');
     }
 
     public function delete(int $user): Response
     {
-        Session::remove('admin_user_errors');
-        Session::remove('admin_user_old');
-        Session::remove('admin_user_status');
+        Session::remove('settings_user_errors');
+        Session::remove('settings_user_old');
+        Session::remove('settings_user_status');
 
         /** @var User|null $record */
         $record = User::query()->where('id', $user)->first();
 
         if (! $record instanceof User) {
-            Session::set('admin_user_errors', ['email' => 'User not found.']);
+            Session::set('settings_user_errors', ['email' => 'User not found.']);
 
-            return Response::redirect('/settings/admin');
+            return Response::redirect('/settings/users');
         }
 
         $record->delete();
 
-        Session::set('admin_user_status', 'User removed successfully.');
+        Session::set('settings_user_status', 'User removed successfully.');
 
-        return Response::redirect('/settings/admin');
+        return Response::redirect('/settings/users');
     }
 }

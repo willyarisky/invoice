@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use DateTime;
 use Throwable;
-use App\Models\Admin;
 use App\Models\Setting;
 use App\Services\ViewData;
 use App\Controllers\Concerns\BuildsPagination;
@@ -304,7 +303,6 @@ class InvoicesController
             ->orderByDesc('created_at')
             ->get();
 
-        $adminEmail = $this->resolveAdminEmail();
         $detailView = $this->buildInvoiceDetailViewData($invoiceRecord, $items);
         $showData = $this->buildInvoiceShowViewData(
             $invoiceRecord,
@@ -314,8 +312,7 @@ class InvoicesController
             $emailOld,
             $emailErrors,
             $paymentErrors,
-            $paymentOld,
-            $adminEmail
+            $paymentOld
         );
 
         $pageTitle = 'Invoice ' . ($invoiceRecord['invoice_no'] ?? '');
@@ -329,7 +326,6 @@ class InvoicesController
             'paymentStatus' => $paymentStatus,
             'paymentErrors' => $paymentErrors,
             'paymentOld' => $paymentOld,
-            'adminEmail' => $adminEmail,
             'paymentTransaction' => $paymentTransaction,
             'detailView' => $detailView,
             'pageTitle' => $pageTitle,
@@ -747,7 +743,6 @@ class InvoicesController
             $data = $request->validate([
                 'subject' => ['required', 'string', 'min:3', 'max:150'],
                 'message' => ['required', 'string', 'min:3'],
-                'cc_admin' => ['boolean'],
                 'cc_myself' => ['boolean'],
             ]);
         } catch (ValidationException $exception) {
@@ -764,8 +759,6 @@ class InvoicesController
 
         $subject = trim((string) $data['subject']);
         $message = trim((string) $data['message']);
-        $adminEmail = $this->resolveAdminEmail();
-        $ccAdmin = (bool) ($data['cc_admin'] ?? false);
         $bccMyself = (bool) ($data['cc_myself'] ?? false);
         $currentUserEmail = $this->resolveCurrentUserEmail();
 
@@ -813,16 +806,12 @@ class InvoicesController
         $pdfContent = $this->renderInvoicePdfContent($record, $items);
         $pdfName = $this->buildInvoicePdfName($record);
 
-        Mail::send(function ($mail) use ($record, $recipientEmail, $subject, $html, $ccAdmin, $adminEmail, $bccMyself, $currentUserEmail, $pdfContent, $pdfName) {
+        Mail::send(function ($mail) use ($record, $recipientEmail, $subject, $html, $bccMyself, $currentUserEmail, $pdfContent, $pdfName) {
             $mail->to($recipientEmail, (string) ($record['customer_name'] ?? 'Customer'))
                 ->subject($subject)
                 ->html($html);
 
-            if ($ccAdmin && $adminEmail !== '' && $adminEmail !== $recipientEmail) {
-                $mail->cc($adminEmail);
-            }
-
-            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $adminEmail && $currentUserEmail !== $recipientEmail) {
+            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $recipientEmail) {
                 $mail->bcc($currentUserEmail);
             }
 
@@ -1574,8 +1563,7 @@ class InvoicesController
         array $emailOld,
         array $emailErrors,
         array $paymentErrors,
-        array $paymentOld,
-        string $adminEmail
+        array $paymentOld
     ): array {
         $status = strtolower((string) ($invoice['status'] ?? 'draft'));
         $statusColors = [
@@ -1584,7 +1572,6 @@ class InvoicesController
             'draft' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
         ];
         $badge = $statusColors[$status] ?? 'bg-stone-100 text-stone-700 border-stone-200';
-        $ccAdminDefault = $adminEmail !== '';
 
         $invoiceNo = (string) ($detail['invoiceNo'] ?? $invoice['invoice_no'] ?? 'Invoice');
         $brandName = (string) ($detail['brandName'] ?? 'Invoice App');
@@ -1667,7 +1654,6 @@ class InvoicesController
             'status' => $status,
             'statusLabel' => ucfirst($status),
             'badge' => $badge,
-            'ccAdminDefault' => $ccAdminDefault,
             'defaultSubject' => $defaultSubject,
             'emailSubject' => $emailSubject,
             'emailMessage' => $emailMessage,
@@ -1862,25 +1848,6 @@ class InvoicesController
             'Pragma' => 'no-cache',
             'Expires' => '0',
         ]);
-    }
-
-    private function resolveAdminEmail(): string
-    {
-        $user = Auth::user();
-        if (! $user || empty($user->email)) {
-            return '';
-        }
-
-        $email = strtolower((string) $user->email);
-        if ($email === '') {
-            return '';
-        }
-
-        if (Admin::query()->where('email', $email)->exists()) {
-            return $email;
-        }
-
-        return '';
     }
 
     private function resolveCurrentUserEmail(): string
