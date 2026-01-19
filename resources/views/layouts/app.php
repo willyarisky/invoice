@@ -1,13 +1,13 @@
 @include('components.head', ['title' => $title ?? $brandName])
 <div class="min-h-screen bg-stone-50 ">
     <header class="border-b border-stone-200 bg-white text-stone-900 print:hidden">
-        <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="relative mx-auto flex w-full max-w-[1200px] flex-row items-center justify-between gap-4 px-6 py-4">
             <div class="flex items-center gap-3">
                 <div>
-                    <p class="text-lg font-semibold text-stone-900">{{ $brandName }}</p>
+                    <a href="/" class="text-lg font-semibold text-stone-900">{{ $brandName }}</a>
                 </div>
             </div>
-            <div class="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+            <div class="flex flex-1 flex-row items-center justify-end gap-2">
                 <div class="flex items-center gap-2">
                     @if ($currentUser)
                         <a href="{{ route('settings.index') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white p-2 text-stone-700 hover:bg-stone-50 {{ !empty($settingsActive) ? 'bg-stone-100 text-stone-900 border-stone-300' : '' }}" aria-label="Settings">
@@ -26,14 +26,36 @@
                         </a>
                     @endif
                 </div>
+                <details class="relative lg:hidden">
+                    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
+                        <span>Menu</span>
+                        <svg aria-hidden="true" class="h-4 w-4 transition group-open:rotate-180" viewBox="0 0 20 20" fill="none">
+                            <path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </summary>
+                    <div class="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 bg-white py-2 shadow-lg">
+                        @foreach ($navItems ?? [] as $item)
+                            <a href="{{ $item['href'] ?? '#' }}"
+                                class="flex items-center justify-between px-4 py-2 text-sm font-medium {{ !empty($item['isActive']) ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-800' }}"
+                                @if (!empty($item['isActive'])) aria-current="page" @endif>
+                                <span>{{ $item['label'] ?? '' }}</span>
+                                @if (!empty($item['isActive']))
+                                    <span class="h-2 w-2 rounded-full bg-stone-900" aria-hidden="true"></span>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
+                </details>
             </div>
         </div>
-        <nav class="mx-auto flex w-full max-w-[1200px] gap-6 overflow-x-auto px-6 text-sm text-stone-500">
-            @foreach ($navItems ?? [] as $item)
-                <a href="{{ $item['href'] ?? '#' }}" class="border-b-2 px-1 py-3 font-medium {{ !empty($item['isActive']) ? 'border-stone-900 text-stone-900' : 'border-transparent hover:border-stone-300 hover:text-stone-800' }}">
-                    {{ $item['label'] ?? '' }}
-                </a>
-            @endforeach
+        <nav class="mx-auto w-full max-w-[1200px] px-6 text-sm text-stone-500">
+            <div class="hidden lg:flex gap-6 overflow-x-auto text-stone-500">
+                @foreach ($navItems ?? [] as $item)
+                    <a href="{{ $item['href'] ?? '#' }}" class="border-b-2 px-1 py-3 font-medium {{ !empty($item['isActive']) ? 'border-stone-900 text-stone-900' : 'border-transparent hover:border-stone-300 hover:text-stone-800' }}" @if (!empty($item['isActive'])) aria-current="page" @endif>
+                        {{ $item['label'] ?? '' }}
+                    </a>
+                @endforeach
+            </div>
         </nav>
     </header>
     <main class="mx-auto w-full min-h-[80vh] max-w-[1200px] px-6 py-6">
