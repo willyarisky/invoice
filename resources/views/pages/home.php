@@ -167,15 +167,8 @@
     </div>
 
     <div class="rounded-2xl border border-stone-200 bg-white px-6 py-6 shadow-sm">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-                <p class="text-lg font-semibold text-stone-900">Cash Flow</p>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-stone-500">
-                <button type="button" class="text-stone-400">...</button>
-            </div>
-        </div>
-        <div class="mt-5 border-t border-stone-100 pt-5">
+       <p class="text-lg font-semibold text-stone-900">Cash Flow</p>
+        <div class="border-t border-stone-100 pt-5">
             <div class="grid gap-6 lg:grid-cols-[1fr_200px]">
                 <div>
                     <div class="flex flex-wrap items-center gap-4 text-xs text-stone-500">
@@ -210,15 +203,54 @@
                 </div>
                 <div class="space-y-6 text-sm text-stone-600">
                     <div>
-                        <p class="text-lg font-semibold text-stone-900">{{ $cashFlowTotalsLabels['income'] ?? '' }}</p>
+                        @if (!empty($cashFlowTotalsCurrencyLabels['income'] ?? []) && count($cashFlowTotalsCurrencyLabels['income']) > 1)
+                            <div class="space-y-1">
+                                @foreach ($cashFlowTotalsCurrencyLabels['income'] as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-lg font-semibold text-stone-900">{{ $cashFlowTotalsLabels['income'] ?? '' }}</p>
+                        @endif
                         <p class="text-xs text-emerald-600">Incoming</p>
                     </div>
                     <div>
-                        <p class="text-lg font-semibold text-stone-900">{{ $cashFlowTotalsLabels['expense'] ?? '' }}</p>
+                        @if (!empty($cashFlowTotalsCurrencyLabels['expense'] ?? []) && count($cashFlowTotalsCurrencyLabels['expense']) > 1)
+                            <div class="space-y-1">
+                                @foreach ($cashFlowTotalsCurrencyLabels['expense'] as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-lg font-semibold text-stone-900">{{ $cashFlowTotalsLabels['expense'] ?? '' }}</p>
+                        @endif
                         <p class="text-xs text-rose-500">Outgoing</p>
                     </div>
                     <div>
-                        <p class="text-lg font-semibold text-stone-900">{{ $cashFlowTotalsLabels['profit'] ?? '' }}</p>
+                        @if (!empty($cashFlowTotalsCurrencyLabels['profit'] ?? []) && count($cashFlowTotalsCurrencyLabels['profit']) > 1)
+                            <div class="space-y-1">
+                                @foreach ($cashFlowTotalsCurrencyLabels['profit'] as $row)
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-stone-900">{{ $row['label'] ?? '' }}</span>
+                                        <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
+                                            {{ $row['currency'] ?? '' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-lg font-semibold text-stone-900">{{ $cashFlowTotalsLabels['profit'] ?? '' }}</p>
+                        @endif
                         <p class="text-xs text-indigo-600">Profit</p>
                     </div>
                 </div>

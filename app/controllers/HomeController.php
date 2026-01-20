@@ -81,10 +81,19 @@ class HomeController
 
         $series = $this->buildMonthlySeries($startDate, $endDate);
         $transactions = DBML::table('transactions')
-            ->select('type', 'amount', 'date')
+            ->select('type', 'amount', 'date', 'currency')
             ->where('date', '>=', $startDate)
             ->where('date', '<=', $endDate)
             ->get();
+
+        $cashFlowCurrencyCodes = DBML::table('transactions')
+            ->select('currency')
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->groupBy('currency')
+            ->get();
+
+        $cashFlowCurrencyOrder = $this->normalizeCurrencyCodes($cashFlowCurrencyCodes, $defaultCurrency);
 
         $expenseCurrencyRows = DBML::table('transactions')
             ->select('currency', DBML::raw('COALESCE(SUM(amount), 0) as amount'))
@@ -153,6 +162,10 @@ class HomeController
         $expenseCountTotal = 0;
         $expenseAmountTotal = 0.0;
         $expenseMaxAmount = 0.0;
+        $cashFlowTotalsByCurrency = [
+            'income' => [],
+            'expense' => [],
+        ];
 
         foreach ($transactions as $transaction) {
             $monthKey = substr((string) ($transaction['date'] ?? ''), 0, 7);
@@ -162,11 +175,17 @@ class HomeController
 
             $amount = (float) ($transaction['amount'] ?? 0);
             $type = strtolower((string) ($transaction['type'] ?? 'expense'));
+            $currency = strtoupper(trim((string) ($transaction['currency'] ?? '')));
+            if ($currency === '') {
+                $currency = strtoupper($defaultCurrency);
+            }
             if ($type === 'income') {
                 $series[$monthKey]['income'] += $amount;
+                $cashFlowTotalsByCurrency['income'][$currency] = ($cashFlowTotalsByCurrency['income'][$currency] ?? 0) + $amount;
                 continue;
             }
             $series[$monthKey]['expense'] += $amount;
+            $cashFlowTotalsByCurrency['expense'][$currency] = ($cashFlowTotalsByCurrency['expense'][$currency] ?? 0) + $amount;
 
             $expenseCountTotal += 1;
             $expenseAmountTotal += $amount;
@@ -196,6 +215,12 @@ class HomeController
         }
 
         $cashFlowTotals['profit'] = $cashFlowTotals['income'] - $cashFlowTotals['expense'];
+        $cashFlowTotalsByCurrency['profit'] = [];
+        foreach ($cashFlowCurrencyOrder as $currency) {
+            $income = (float) ($cashFlowTotalsByCurrency['income'][$currency] ?? 0);
+            $expense = (float) ($cashFlowTotalsByCurrency['expense'][$currency] ?? 0);
+            $cashFlowTotalsByCurrency['profit'][$currency] = $income - $expense;
+        }
 
         $invoiceCountTotal = array_sum($invoiceStatusCounts);
         $invoiceAmountTotal = array_sum($invoiceStatusTotals);
@@ -303,6 +328,11 @@ class HomeController
             'expense' => Setting::formatMoney((float) ($cashFlowTotals['expense'] ?? 0)),
             'profit' => Setting::formatMoney((float) ($cashFlowTotals['profit'] ?? 0)),
         ];
+        $cashFlowTotalsCurrencyLabels = [
+            'income' => $this->formatCurrencyTotals($cashFlowTotalsByCurrency['income'], $cashFlowCurrencyOrder),
+            'expense' => $this->formatCurrencyTotals($cashFlowTotalsByCurrency['expense'], $cashFlowCurrencyOrder),
+            'profit' => $this->formatCurrencyTotals($cashFlowTotalsByCurrency['profit'], $cashFlowCurrencyOrder),
+        ];
 
         return view('pages/home', array_merge($layout, [
             'range' => [
@@ -343,6 +373,7 @@ class HomeController
             ],
             'cashFlowLabels' => $cashFlowLabels,
             'cashFlowTotalsLabels' => $cashFlowTotalsLabels,
+            'cashFlowTotalsCurrencyLabels' => $cashFlowTotalsCurrencyLabels,
         ]));
     }
 
