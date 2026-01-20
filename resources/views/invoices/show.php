@@ -45,7 +45,6 @@
                     </button>
                 </div>
             </div>
-            <a href="{{ route('invoices.index') }}" class="w-full text-sm text-stone-500 hover:text-stone-800 sm:w-auto">&larr; Back to invoices</a>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[320px_1fr]">

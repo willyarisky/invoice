@@ -112,7 +112,7 @@
                                 <option value="{{ $customer['id'] }}" @if ((string) $customer['id'] === (string) $selectedCustomer) selected @endif>{{ $customer['name'] ?? 'Unnamed customer' }}</option>
                             @endforeach
                         </select>
-                        <div class="mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500 max-h-[100px]" x-cloak x-show="customerId === ''">
+                        <div class="mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500 max-h-[70px]" x-cloak x-show="customerId === ''">
                             <span class="mt-2 text-base font-semibold text-stone-600">Add a customer</span>
                             <span class="mt-1 text-xs text-stone-400">Choose from your list to attach details.</span>
                         </div>
@@ -120,22 +120,22 @@
                     </div>
                 </div>
                 <div class="flex flex-col gap-4">
+                    <label class="flex items-center font-medium text-stone-700 pb-2 mb-2 border-b border-stone-200">
+                        <span>Invoice Number</span>
+                        <input type="text" name="invoice_no" value="{{ $invoiceNumber ?? '' }}" class="border-none px-2" />
+                    </label>
+
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="flex flex-col text-sm font-medium text-stone-700">
                             <span class="flex items-center gap-1">Invoice Date <span class="text-rose-500">*</span></span>
-                            <input type="date" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2" />
+                            <input type="date" name="date" value="{{ $formValues['date'] ?? $today ?? '' }}" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2" />
                         </label>
-                        
+
                         <label class="flex flex-col text-sm font-medium text-stone-700">
-                            <span class="flex items-center gap-1">Invoice Number <span class="text-rose-500">*</span></span>
-                            <input type="text" class="mt-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2" />
+                            <span class="flex items-center gap-1">Due Date <span class="text-rose-500">*</span></span>
+                            <input type="date" name="due_date" value="{{ ($formValues['due_date'] ?? '') !== '' ? $formValues['due_date'] : ($formValues['date'] ?? $today ?? '') }}" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2" />
                         </label>
                     </div>
-
-                    <label class="flex flex-col w-1/2 text-sm font-medium text-stone-700">
-                        <span class="flex items-center gap-1">Due Date <span class="text-rose-500">*</span></span>
-                        <input type="date" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-2" />
-                    </label>
                 </div>
             </div>
             <div class="rounded-xl border border-stone-200">
