@@ -12,24 +12,29 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = 'owner@example.com';
-        $userExists = DBML::table('users')->where('email', $email)->exists();
-
-        if ($userExists) {
-            return;
-        }
-
         $now = date('Y-m-d H:i:s');
         $password = 'password';
+        $users = [
+            ['name' => 'Owner', 'email' => 'owner@example.com'],
+            ['name' => 'Maria Santos', 'email' => 'maria@example.com'],
+            ['name' => 'Jordan Lee', 'email' => 'jordan@example.com'],
+        ];
 
-        DBML::table('users')->insert([
-            'name' => 'Owner',
-            'email' => $email,
-            'password' => Crypto::hash($password),
-            'email_verified_at' => $now,
-            'remember_token' => null,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        foreach ($users as $user) {
+            $userExists = DBML::table('users')->where('email', $user['email'])->exists();
+            if ($userExists) {
+                continue;
+            }
+
+            DBML::table('users')->insert([
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'password' => Crypto::hash($password),
+                'email_verified_at' => $now,
+                'remember_token' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
     }
 }

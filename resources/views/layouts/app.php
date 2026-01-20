@@ -33,17 +33,25 @@
                             <path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </summary>
-                    <div class="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 bg-white py-2 shadow-lg">
-                        @foreach ($navItems ?? [] as $item)
-                            <a href="{{ $item['href'] ?? '#' }}"
-                                class="flex items-center justify-between px-4 py-2 text-sm font-medium {{ !empty($item['isActive']) ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-800' }}"
-                                @if (!empty($item['isActive'])) aria-current="page" @endif>
-                                <span>{{ $item['label'] ?? '' }}</span>
-                                @if (!empty($item['isActive']))
-                                    <span class="h-2 w-2 rounded-full bg-stone-900" aria-hidden="true"></span>
-                                @endif
-                            </a>
-                        @endforeach
+                    <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/40 px-4 pb-6" onclick="if (event.target === this) { this.closest('details').removeAttribute('open'); }">
+                        <div class="w-full max-w-sm rounded-2xl border border-stone-200 bg-white px-4 py-4 shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-semibold text-stone-900">Menu</p>
+                                <button type="button" class="rounded-lg border border-stone-200 px-2 py-1 text-xs text-stone-500 hover:bg-stone-50" onclick="this.closest('details').removeAttribute('open')">Close</button>
+                            </div>
+                            <div class="mt-3 space-y-1">
+                                @foreach ($navItems ?? [] as $item)
+                                    <a href="{{ $item['href'] ?? '#' }}"
+                                        class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium {{ !empty($item['isActive']) ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-800' }}"
+                                        @if (!empty($item['isActive'])) aria-current="page" @endif>
+                                        <span>{{ $item['label'] ?? '' }}</span>
+                                        @if (!empty($item['isActive']))
+                                            <span class="h-2 w-2 rounded-full bg-stone-900" aria-hidden="true"></span>
+                                        @endif
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </details>
             </div>
@@ -58,7 +66,7 @@
             </div>
         </nav>
     </header>
-    <main class="mx-auto w-full min-h-[80vh] max-w-[1200px] px-6 py-6">
+    <main class="mx-auto w-full md:min-h-[80vh] min-h-[87vh] max-w-[1200px] px-6 py-6">
         @yield('content')
     </main>
     <footer class="border-t border-stone-200 bg-white text-stone-500 print:hidden">

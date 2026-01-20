@@ -36,48 +36,70 @@
     ])
 
     <div class="space-y-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold text-stone-900">Available currencies</h1>
-        </div>
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button type="button" class="bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800" x-on:click="openAdd()">
-                    Add currency
-                </button>
+        <div class="flex items-center justify-between gap-3 sm:gap-4 lg:justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-stone-900">Available currencies</h1>
             </div>
+            <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-stone-900 text-white hover:bg-stone-800 sm:h-auto sm:w-auto sm:px-4 sm:py-2 sm:text-sm sm:font-semibold" x-on:click="openAdd()" aria-label="Add currency">
+                <svg aria-hidden="true" class="h-4 w-4 sm:hidden" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                <span class="hidden sm:inline">Add currency</span>
+            </button>
         </div>
-            @if (!empty($status ?? ''))
-                <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" x-data="{ open: true }" x-show="open">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex-1">
-                            {{ $status ?? '' }}
-                        </div>
-                        <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            @endif
-
-            @if (!empty($errors ?? []))
-                <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" x-data="{ open: true }" x-show="open">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex-1">
-                            <p class="font-semibold">Please review the highlighted fields.</p>
-                        </div>
-                        <button type="button" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-current hover:bg-black/5" x-on:click="open = false" aria-label="Dismiss message">
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            @endif
-
+        @if($status || $errors)
+            <div>
+            @include('components/alerts', [
+                'status' => $status ?? null,
+                'errors' => $errors ?? [],
+            ])
+            </div>
+        @endif
         <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
-            <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
+            <div class="border-t border-stone-100">
+                <div class="lg:hidden">
+                    <div class="divide-y divide-stone-100">
+                        @foreach ($currencies as $currency)
+                            <div class="px-4 py-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-base font-semibold text-stone-900">{{ $currency['code'] ?? '' }}</div>
+                                    @if (!empty($currency['is_default']))
+                                        <span class="inline-flex items-center rounded-xl bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">Default</span>
+                                    @else
+                                        <form method="POST" action="{{ route('settings.currency.update') }}">
+                                            <input type="hidden" name="default_currency" value="{{ $currency['code'] ?? '' }}">
+                                            <button type="submit" class="text-xs font-semibold text-stone-500 hover:text-stone-800">Set default</button>
+                                        </form>
+                                    @endif
+                                </div>
+                                <div class="mt-2 text-sm text-stone-600">
+                                    <p class="text-stone-700">{{ $currency['name'] ?? '' }}</p>
+                                    <p class="text-xs text-stone-500">Symbol {{ $currency['symbol'] ?? '—' }}</p>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <button
+                                        type="button"
+                                        class="rounded-lg border border-stone-200 px-3 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-50"
+                                        data-action="{{ $currency['edit_action'] ?? '' }}"
+                                        data-code="{{ $currency['code'] ?? '' }}"
+                                        data-name="{{ $currency['name'] ?? '' }}"
+                                        data-symbol="{{ $currency['symbol'] ?? '' }}"
+                                        data-is-default="{{ $currency['edit_is_default'] ?? '0' }}"
+                                        x-on:click="openEdit($el.dataset.action, $el.dataset.code, $el.dataset.name, $el.dataset.symbol, $el.dataset.isDefault)"
+                                    >
+                                        Edit
+                                    </button>
+                                    <form method="POST" action="{{ route('settings.currency.delete', ['currency' => $currency['id']]) }}">
+                                        <button type="submit" class="rounded-lg border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="px-4 py-6 text-center text-sm text-stone-500">No currencies added yet.</div>
+                        @endforeach
+                    </div>
+                </div>
+                <table class="hidden min-w-full divide-y divide-stone-100 text-sm text-stone-700 lg:table">
                 <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
                     <tr>
                         <th class="px-4 py-3">Code</th>
@@ -129,7 +151,8 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+                </table>
+            </div>
         </div>
     </div>
 </div>
