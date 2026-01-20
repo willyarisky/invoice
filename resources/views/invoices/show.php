@@ -3,19 +3,14 @@
 @section('content')
 <div x-data="{ emailModalOpen: {{ $autoOpenEmailModal ? 'true' : 'false' }}, paymentModalOpen: {{ $autoOpenPaymentModal ? 'true' : 'false' }} }">
     <div class="space-y-8">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between print:hidden">
-            <div class="space-y-2">
-                <div class="flex flex-wrap items-center gap-3">
-                    <h1 class="text-2xl font-semibold text-stone-900">Invoice: {{ $invoiceNo }}</h1>
-                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $badge }}">
-                        {{ $statusLabel ?? '' }}
-                    </span>
-                </div>
-                <a href="{{ route('invoices.index') }}" class="text-sm text-stone-500 hover:text-stone-800">&larr; Back to invoices</a>
-            </div>
-            <div class="relative" x-data="{ open: false, publicUrl: {{ $publicUrlJson ?? '""' }}, copyPublicLink() { if (!this.publicUrl) { return; } if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(this.publicUrl).then(() => { window.alert('Public link copied to clipboard.'); }).catch(() => { window.prompt('Copy link', this.publicUrl); }); } else { window.prompt('Copy link', this.publicUrl); } } }">
-                <button type="button" class="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800" x-on:click="open = !open" x-bind:aria-expanded="open.toString()">
-                    Actions
+        <div class="flex flex-wrap items-center gap-3 print:hidden">
+            <h1 class="text-2xl font-semibold text-stone-900">{{ $invoiceNo }}</h1>
+            <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $badge }}">
+                {{ $statusLabel ?? '' }}
+            </span>
+            <div class="relative ml-auto" x-data="{ open: false, publicUrl: {{ $publicUrlJson ?? '""' }}, copyPublicLink() { if (!this.publicUrl) { return; } if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(this.publicUrl).then(() => { window.alert('Public link copied to clipboard.'); }).catch(() => { window.prompt('Copy link', this.publicUrl); }); } else { window.prompt('Copy link', this.publicUrl); } } }">
+                <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-900 text-white hover:bg-stone-800 sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-sm sm:font-semibold" x-on:click="open = !open" x-bind:aria-expanded="open.toString()" aria-label="Actions">
+                    <span class="hidden sm:inline">Actions</span>
                     <svg class="h-4 w-4 text-white/80" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.7a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" clip-rule="evenodd" />
                     </svg>
@@ -50,6 +45,7 @@
                     </button>
                 </div>
             </div>
+            <a href="{{ route('invoices.index') }}" class="w-full text-sm text-stone-500 hover:text-stone-800 sm:w-auto">&larr; Back to invoices</a>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[320px_1fr]">
@@ -60,7 +56,99 @@
                 @include('components/alerts', [
                     'status' => $paymentStatus ?? null,
                 ])
-                <div class="rounded-xl border border-stone-200 bg-white px-4 py-4 shadow-sm">
+                <div class="flex gap-3 lg:hidden">
+                    <details class="w-1/2">
+                        <summary class="flex cursor-pointer list-none items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-900 shadow-sm">
+                            <span>Get Paid</span>
+                            <svg aria-hidden="true" class="h-4 w-4 text-stone-500" viewBox="0 0 20 20" fill="none">
+                                <path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </summary>
+                        <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/40 px-4 pb-6" onclick="if (event.target === this) { this.closest('details').removeAttribute('open'); }">
+                            <div class="w-full max-w-sm rounded-2xl border border-stone-200 bg-white px-4 py-4 shadow-xl">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-stone-900">Get Paid</p>
+                                    <button type="button" class="rounded-lg border border-stone-200 px-2 py-1 text-xs text-stone-500 hover:bg-stone-50" onclick="this.closest('details').removeAttribute('open')">Close</button>
+                                </div>
+                                <div class="mt-3 space-y-3 text-sm text-stone-600">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-semibold {{ $status === 'paid' ? 'text-emerald-600' : 'text-amber-600' }}">{{ $statusLabel ?? '' }}</span>
+                                    </div>
+                                    <p>Amount due: {{ $amountDueLabel }}</p>
+                                    @if ($lastStatusEvent)
+                                        <p class="text-xs text-stone-400">{{ $lastStatusEvent['summary'] ?? '' }} {{ $lastStatusEvent['timestamp'] ? '- ' . $lastStatusEvent['timestamp'] : '' }}</p>
+                                    @endif
+                                    @if ($hasPaymentTransaction)
+                                        <p class="text-xs text-stone-500">
+                                            Payment recorded: {{ $paymentTransactionLabel }}
+                                            @if ($paymentTransactionDate !== '')
+                                                - {{ $paymentTransactionDate }}
+                                            @endif
+                                        </p>
+                                        @if ($paymentTransactionDescription !== '')
+                                            <p class="text-xs text-stone-400">{{ $paymentTransactionDescription }}</p>
+                                        @endif
+                                    @endif
+                                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                                        @if ($hasPaymentTransaction)
+                                            <a href="{{ route('transactions.show', ['transaction' => $paymentTransaction['id']]) }}" class="text-xs font-semibold text-stone-600 hover:text-stone-900">
+                                                View transaction
+                                            </a>
+                                            <button type="button" class="rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-50" x-on:click="paymentModalOpen = true; this.closest('details').removeAttribute('open')">
+                                                Edit payment
+                                            </button>
+                                        @elseif ($status !== 'paid')
+                                            <button type="button" class="rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-50" x-on:click="paymentModalOpen = true; this.closest('details').removeAttribute('open')">
+                                                Record payment
+                                            </button>
+                                        @else
+                                            <span class="text-xs text-stone-400">Invoice marked as paid.</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="w-1/2">
+                        <summary class="flex cursor-pointer list-none items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-900 shadow-sm">
+                            <span>Timeline</span>
+                            <svg aria-hidden="true" class="h-4 w-4 text-stone-500" viewBox="0 0 20 20" fill="none">
+                                <path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </summary>
+                        <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/40 px-4 pb-6" onclick="if (event.target === this) { this.closest('details').removeAttribute('open'); }">
+                            <div class="w-full max-w-sm rounded-2xl border border-stone-200 bg-white px-4 py-4 shadow-xl">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-stone-900">Timeline</p>
+                                    <button type="button" class="rounded-lg border border-stone-200 px-2 py-1 text-xs text-stone-500 hover:bg-stone-50" onclick="this.closest('details').removeAttribute('open')">Close</button>
+                                </div>
+                                @if (!empty($timelineItems))
+                                    <div class="mt-3 space-y-3">
+                                        @foreach ($timelineItems as $event)
+                                            <div class="flex gap-3">
+                                                <span class="text-stone-300">
+                                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <circle cx="10" cy="10" r="5" />
+                                                    </svg>
+                                                </span>
+                                                <div>
+                                                    <p class="text-sm font-semibold text-stone-800">{{ $event['summary'] ?? '' }}</p>
+                                                    @if (!empty($event['detail'] ?? ''))
+                                                        <p class="text-xs text-stone-500">{{ $event['detail'] }}</p>
+                                                    @endif
+                                                    <p class="text-xs text-stone-400">{{ $event['timestamp'] ?? '' }}</p>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="mt-2 text-sm text-stone-500">No activity recorded yet.</p>
+                                @endif
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="hidden lg:block rounded-xl border border-stone-200 bg-white px-4 py-4 shadow-sm">
                     <div class="flex items-center justify-between">
                         <p class="text-sm font-semibold text-stone-900">Get Paid</p>
                         <span class="text-xs font-semibold {{ $status === 'paid' ? 'text-emerald-600' : 'text-amber-600' }}">{{ $statusLabel ?? '' }}</span>
@@ -97,7 +185,7 @@
                         @endif
                     </div>
                 </div>
-                <div class="rounded-xl border border-stone-200 bg-white px-4 py-4 shadow-sm" x-data="{ showAll: false }">
+                <div class="hidden lg:block rounded-xl border border-stone-200 bg-white px-4 py-4 shadow-sm" x-data="{ showAll: false }">
                     <p class="text-xs uppercase tracking-widest text-stone-400">Timeline</p>
                     @if (!empty($timelineItems))
                         <div class="mt-3 space-y-3">
