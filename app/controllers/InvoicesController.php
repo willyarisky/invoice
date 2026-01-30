@@ -1059,6 +1059,29 @@ class InvoicesController
             ->where('token', $token)
             ->first();
 
+        if ($sent === null) {
+            return $this->pixelResponse();
+        }
+
+        $pixelUrl = route('invoices.email.open.pixel', ['invoice' => $invoice, 'token' => $token]);
+        $pixelUrl = $this->appendCacheBuster($pixelUrl);
+
+        return Response::redirect($pixelUrl, 302, $this->noCacheHeaders());
+    }
+
+    public function trackEmailOpenPixel(int $invoice, string $token): Response
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return $this->pixelResponse();
+        }
+
+        $sent = DBML::table('invoice_events')
+            ->where('invoice_id', $invoice)
+            ->where('type', 'email_sent')
+            ->where('token', $token)
+            ->first();
+
         if ($sent !== null) {
             $alreadyOpened = DBML::table('invoice_events')
                 ->where('invoice_id', $invoice)
@@ -1068,30 +1091,61 @@ class InvoicesController
 
             if (! $alreadyOpened) {
                 $request = Request::instance();
-                $ip = $request->ip();
-                $agent = trim((string) $request->header('user-agent', ''));
-                $details = [];
+                if (! $this->shouldIgnoreEmailOpen($request)) {
+                    $ip = $request->ip();
+                    $agent = trim((string) $request->header('user-agent', ''));
+                    $details = [];
 
-                if ($ip) {
-                    $details[] = 'IP: ' . $ip;
+                    if ($ip) {
+                        $details[] = 'IP: ' . $ip;
+                    }
+                    if ($agent !== '') {
+                        $details[] = 'Agent: ' . $agent;
+                    }
+
+                    $detail = $details !== [] ? implode(' | ', $details) : null;
+
+                    $this->logInvoiceEvent(
+                        $invoice,
+                        'email_opened',
+                        'Email opened',
+                        $detail,
+                        $token
+                    );
                 }
-                if ($agent !== '') {
-                    $details[] = 'Agent: ' . $agent;
-                }
-
-                $detail = $details !== [] ? implode(' | ', $details) : null;
-
-                $this->logInvoiceEvent(
-                    $invoice,
-                    'email_opened',
-                    'Email opened',
-                    $detail,
-                    $token
-                );
             }
         }
 
         return $this->pixelResponse();
+    }
+
+    private function shouldIgnoreEmailOpen(Request $request): bool
+    {
+        $method = $request->method();
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function noCacheHeaders(): array
+    {
+        return [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ];
+    }
+
+    private function appendCacheBuster(string $url): string
+    {
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url . $separator . 'r=' . bin2hex(random_bytes(4));
     }
 
     /**

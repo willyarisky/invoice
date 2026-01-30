@@ -74,6 +74,7 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/settings/users/{user}/delete', [SettingsUsersController::class, 'delete'])->name('settings.users.delete');
 });
 
+Router::get('/invoices/{invoice}/email-open/{token}/pixel', [InvoicesController::class, 'trackEmailOpenPixel'])->name('invoices.email.open.pixel');
 Router::get('/invoices/{invoice}/email-open/{token}', [InvoicesController::class, 'trackEmailOpen'])->name('invoices.email.open');
 Router::get('/invoices/public/{uuid}', [InvoicesController::class, 'publicView'])->name('invoices.public');
 
