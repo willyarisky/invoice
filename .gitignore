@@ -19,3 +19,4 @@ storage/cache/rate_limit
 storage/meta/*
 storage/database/*
 
+public/storage
