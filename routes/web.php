@@ -25,6 +25,7 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/invoices/{invoice}/update', [InvoicesController::class, 'update'])->name('invoices.update');
     Router::post('/invoices/{invoice}/mark-sent', [InvoicesController::class, 'markSent'])->name('invoices.markSent');
     Router::post('/invoices/{invoice}/email', [InvoicesController::class, 'sendEmail'])->name('invoices.email');
+    Router::post('/invoices/{invoice}/reminder', [InvoicesController::class, 'sendReminder'])->name('invoices.reminder.email');
     Router::post('/invoices/{invoice}/payment', [InvoicesController::class, 'recordPayment'])->name('invoices.payment');
     Router::post('/invoices/{invoice}/payment/update', [InvoicesController::class, 'updatePayment'])->name('invoices.payment.update');
     Router::get('/invoices/{invoice}/download', [InvoicesController::class, 'download'])->name('invoices.download');

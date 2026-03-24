@@ -556,6 +556,7 @@ class SettingsController
                 'mail_password' => ['string'],
                 'mail_encryption' => ['string'],
                 'invoice_email_message' => ['string'],
+                'invoice_reminder_email_message' => ['string'],
             ]);
         } catch (ValidationException $exception) {
             $messages = array_map(
@@ -580,6 +581,7 @@ class SettingsController
             'mail_encryption' => strtolower(trim((string) ($data['mail_encryption'] ?? ''))),
         ];
         $invoiceEmailMessage = trim((string) $request->input('invoice_email_message', ''));
+        $invoiceReminderEmailMessage = trim((string) $request->input('invoice_reminder_email_message', ''));
 
         $allowedEncryption = ['tls', 'ssl', 'none', ''];
         if (!in_array($payload['mail_encryption'], $allowedEncryption, true)) {
@@ -606,6 +608,7 @@ class SettingsController
 
         $this->saveSettings([
             'invoice_email_message' => $invoiceEmailMessage,
+            'invoice_reminder_email_message' => $invoiceReminderEmailMessage,
         ]);
 
         Session::set('settings_email_status', 'Email settings updated.');

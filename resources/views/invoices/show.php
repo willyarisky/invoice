@@ -1,7 +1,7 @@
 @layout('layouts.app', ['title' => $pageTitle ?? 'Invoice'])
 
 @section('content')
-<div x-data="{ emailModalOpen: {{ $autoOpenEmailModal ? 'true' : 'false' }}, paymentModalOpen: {{ $autoOpenPaymentModal ? 'true' : 'false' }} }">
+<div x-data="{ emailModalOpen: {{ $autoOpenEmailModal ? 'true' : 'false' }}, reminderModalOpen: {{ $autoOpenReminderModal ? 'true' : 'false' }}, paymentModalOpen: {{ $autoOpenPaymentModal ? 'true' : 'false' }} }">
     <div class="space-y-8">
         <div class="flex flex-wrap items-center gap-3 print:hidden">
             <h1 class="text-2xl font-semibold text-stone-900">{{ $invoiceNo }}</h1>
@@ -37,6 +37,11 @@
                     <button type="button" class="flex w-full items-center px-4 py-2 text-left font-semibold text-stone-600 hover:bg-stone-50" x-on:click="emailModalOpen = true; open = false">
                         Send invoice to email
                     </button>
+                    @if ($status === 'sent')
+                        <button type="button" class="flex w-full items-center px-4 py-2 text-left font-semibold text-stone-600 hover:bg-stone-50" x-on:click="reminderModalOpen = true; open = false">
+                            Send reminder
+                        </button>
+                    @endif
                     <a href="{{ route('invoices.download', ['invoice' => $invoice['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50">
                         Download
                     </a>
@@ -51,6 +56,9 @@
             <div class="space-y-6 print:hidden">
                 @include('components/alerts', [
                     'status' => $emailStatus ?? null,
+                ])
+                @include('components/alerts', [
+                    'status' => $reminderStatus ?? null,
                 ])
                 @include('components/alerts', [
                     'status' => $paymentStatus ?? null,
@@ -333,6 +341,72 @@
                         </button>
                         <button type="submit" class="rounded-xl bg-stone-800 px-6 py-2 text-sm font-semibold text-white hover:bg-stone-700">
                             Send email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="invoice-reminder-modal" class="fixed inset-0 z-50 print:hidden" x-cloak x-show="reminderModalOpen" x-on:click.self="reminderModalOpen = false">
+        <div class="absolute inset-0 bg-stone-900/60"></div>
+        <div class="relative mx-auto mt-10 w-full max-w-2xl px-6 pb-10">
+            <div class="rounded-xl bg-white p-6 shadow-2xl">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-stone-400">Invoice reminder</p>
+                        <p class="mt-2 text-2xl font-semibold text-stone-900">Send reminder</p>
+                        <p class="mt-2 text-sm text-stone-500">Default recipient: {{ $invoice['customer_email'] ?? 'No email on file' }}.</p>
+                    </div>
+                    <button type="button" class="text-sm font-semibold text-stone-500 hover:text-stone-800" x-on:click="reminderModalOpen = false">
+                        Close
+                    </button>
+                </div>
+
+                @include('components/alerts', [
+                    'errors' => $reminderErrors ?? [],
+                    'alertErrorMessage' => 'Please review the reminder email fields.',
+                    'alertErrorClass' => 'mt-4',
+                ])
+
+                <form method="POST" action="{{ route('invoices.reminder.email', ['invoice' => $invoice['id']]) }}" class="mt-4 space-y-4">
+                    <label class="flex flex-col text-sm font-medium text-stone-700">
+                        To
+                        <input type="email" name="email" value="{{ $reminderOld['email'] ?? ($invoice['customer_email'] ?? '') }}" class="mt-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-stone-700" placeholder="name@example.com">
+                        @if (isset($reminderErrors['email']))
+                            <span class="mt-1 text-xs text-rose-500">{{ $reminderErrors['email'] ?? '' }}</span>
+                        @endif
+                    </label>
+
+                    <label class="flex flex-col text-sm font-medium text-stone-700">
+                        Subject
+                        <input type="text" name="subject" value="{{ $reminderSubject }}" class="mt-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-stone-700">
+                        @if (isset($reminderErrors['subject']))
+                            <span class="mt-1 text-xs text-rose-500">{{ $reminderErrors['subject'] ?? '' }}</span>
+                        @endif
+                    </label>
+
+                    <label class="flex flex-col text-sm font-medium text-stone-700">
+                        Message
+                        <textarea name="message" rows="7" class="mt-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-stone-700">{{ $reminderMessage }}</textarea>
+                        @if (isset($reminderErrors['message']))
+                            <span class="mt-1 text-xs text-rose-500">{{ $reminderErrors['message'] ?? '' }}</span>
+                        @endif
+                    </label>
+
+                    @if ($currentUserEmail !== '')
+                        <label class="inline-flex items-center gap-2 text-sm text-stone-600">
+                            <input type="checkbox" name="cc_myself" value="1" class="h-4 w-4 rounded-xl border-stone-300 text-stone-700" @if (!empty($reminderOld['cc_myself'])) checked @endif>
+                            BCC myself ({{ $currentUserEmail }})
+                        </label>
+                    @endif
+
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button" class="rounded-xl border border-stone-200 px-5 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-50" x-on:click="reminderModalOpen = false">
+                            Cancel
+                        </button>
+                        <button type="submit" class="rounded-xl bg-stone-800 px-6 py-2 text-sm font-semibold text-white hover:bg-stone-700">
+                            Send reminder
                         </button>
                     </div>
                 </form>

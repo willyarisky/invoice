@@ -79,6 +79,10 @@ class Setting extends Model
             'label' => 'Invoice Email Message',
             'default' => "Hi {customer_name},\n\nPlease find {invoice_no} attached. The total due is {total}.\n\nThanks,\n{company_name}",
         ],
+        'invoice_reminder_email_message' => [
+            'label' => 'Invoice Reminder Email Message',
+            'default' => "Dear {customer_name},\n\nWe hope this message finds you well.\n This is a friendly reminder that invoice {invoice_no} from {company_name} is still outstanding. We kindly ask you to review the invoice and proceed with the payment at your earliest convenience.\n You can view the invoice details and complete the payment using the following link:\n<a href=\"{invoice_public_url}\">{invoice_no}</a>\n\nIf you have already made the payment, please disregard this message. Otherwise, feel free to contact us if you have any questions or require further assistance.\nThank you for your attention to this matter.\n\nBest regards,\n{company_name}",
+        ],
         'primary_accent' => [
             'label' => 'Primary Accent',
             'default' => 'Stone',

@@ -242,6 +242,9 @@ class InvoicesController
         $emailStatus = Session::get('invoice_email_status');
         $emailErrors = Session::get('invoice_email_errors') ?? [];
         $emailOld = Session::get('invoice_email_old') ?? [];
+        $reminderStatus = Session::get('invoice_reminder_status');
+        $reminderErrors = Session::get('invoice_reminder_errors') ?? [];
+        $reminderOld = Session::get('invoice_reminder_old') ?? [];
         $paymentStatus = Session::get('invoice_payment_status');
         $paymentErrors = Session::get('invoice_payment_errors') ?? [];
         $paymentOld = Session::get('invoice_payment_old') ?? [];
@@ -249,6 +252,9 @@ class InvoicesController
         Session::remove('invoice_email_status');
         Session::remove('invoice_email_errors');
         Session::remove('invoice_email_old');
+        Session::remove('invoice_reminder_status');
+        Session::remove('invoice_reminder_errors');
+        Session::remove('invoice_reminder_old');
         Session::remove('invoice_payment_status');
         Session::remove('invoice_payment_errors');
         Session::remove('invoice_payment_old');
@@ -311,6 +317,8 @@ class InvoicesController
             $paymentTransaction,
             $emailOld,
             $emailErrors,
+            $reminderOld,
+            $reminderErrors,
             $paymentErrors,
             $paymentOld
         );
@@ -323,6 +331,9 @@ class InvoicesController
             'emailStatus' => $emailStatus,
             'emailErrors' => $emailErrors,
             'emailOld' => $emailOld,
+            'reminderStatus' => $reminderStatus,
+            'reminderErrors' => $reminderErrors,
+            'reminderOld' => $reminderOld,
             'paymentStatus' => $paymentStatus,
             'paymentErrors' => $paymentErrors,
             'paymentOld' => $paymentOld,
@@ -839,6 +850,161 @@ class InvoicesController
         );
 
         Session::set('invoice_email_status', 'Email sent successfully.');
+
+        return Response::redirect('/invoices/' . $invoice);
+    }
+
+    public function sendReminder(int $invoice, Request $request): Response
+    {
+        Session::remove('invoice_reminder_status');
+        Session::remove('invoice_reminder_errors');
+        Session::remove('invoice_reminder_old');
+
+        $record = DBML::table('invoices as i')
+            ->select(
+                'i.id',
+                'i.invoice_no',
+                'i.date',
+                'i.due_date',
+                'i.status',
+                'i.currency',
+                'i.total',
+                'i.tax_id',
+                'i.tax_rate',
+                'i.tax_amount',
+                'i.notes',
+                'i.public_uuid',
+                'c.name as customer_name',
+                'c.email as customer_email',
+                'c.address as customer_address',
+                't.name as tax_name'
+            )
+            ->leftJoin('customers as c', 'c.id', '=', 'i.customer_id')
+            ->leftJoin('taxes as t', 't.id', '=', 'i.tax_id')
+            ->where('i.id', $invoice)
+            ->first();
+
+        if ($record === null) {
+            Session::set('invoice_reminder_errors', ['email' => 'Invoice not found.']);
+            return Response::redirect('/invoices');
+        }
+
+        $currentStatus = strtolower((string) ($record['status'] ?? 'draft'));
+        if ($currentStatus === 'paid') {
+            Session::set('invoice_reminder_status', 'Invoice is already marked as paid.');
+            return Response::redirect('/invoices/' . $invoice);
+        }
+
+        $record['public_uuid'] = $this->ensureInvoicePublicUuid(
+            $invoice,
+            $record['public_uuid'] ?? null
+        );
+
+        $customerEmail = trim((string) ($record['customer_email'] ?? ''));
+        $emailInput = trim((string) $request->input('email', ''));
+        if ($emailInput !== '' && !filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
+            Session::set('invoice_reminder_errors', ['email' => 'Enter a valid email address.']);
+            Session::set('invoice_reminder_old', $request->all());
+            return Response::redirect('/invoices/' . $invoice);
+        }
+
+        $recipientEmail = $emailInput !== '' ? $emailInput : $customerEmail;
+        if ($recipientEmail === '') {
+            Session::set('invoice_reminder_errors', ['email' => 'Recipient email is required.']);
+            Session::set('invoice_reminder_old', $request->all());
+            return Response::redirect('/invoices/' . $invoice);
+        }
+
+        try {
+            $data = $request->validate([
+                'subject' => ['required', 'string', 'min:3', 'max:150'],
+                'message' => ['required', 'string', 'min:3'],
+                'cc_myself' => ['boolean'],
+            ]);
+        } catch (ValidationException $exception) {
+            $messages = array_map(
+                static fn (array $errors): string => (string) ($errors[0] ?? ''),
+                $exception->errors()
+            );
+
+            Session::set('invoice_reminder_errors', $messages);
+            Session::set('invoice_reminder_old', $request->all());
+
+            return Response::redirect('/invoices/' . $invoice);
+        }
+
+        $subject = trim((string) $data['subject']);
+        $message = trim((string) $data['message']);
+        $bccMyself = (bool) ($data['cc_myself'] ?? false);
+        $currentUserEmail = $this->resolveCurrentUserEmail();
+
+        $items = DBML::table('invoice_items')
+            ->where('invoice_id', $invoice)
+            ->orderBy('id')
+            ->get();
+
+        $businessName = Setting::getValue('business_name');
+        $brandName = $businessName !== '' ? $businessName : 'Invoice App';
+        $invoiceNo = (string) ($record['invoice_no'] ?? 'Invoice');
+        $due = (string) ($record['due_date'] ?? '');
+        $totalLabel = Setting::formatMoney((float) ($record['total'] ?? 0), $record['currency'] ?? null);
+        $publicUuid = trim((string) ($record['public_uuid'] ?? ''));
+        $publicUrl = $publicUuid !== '' ? route('invoices.public', ['uuid' => $publicUuid]) : '';
+        $companyAddress = Setting::getValue('company_address');
+        $companyLogo = trim((string) Setting::getValue('company_logo'));
+        $companyEmail = Setting::getValue('company_email');
+        if ($companyEmail === '') {
+            $companyEmail = Setting::getValue('mail_from_address');
+        }
+        $companyPhone = Setting::getValue('company_phone');
+        $trackingToken = bin2hex(random_bytes(16));
+        $trackingUrl = route('invoices.email.open', ['invoice' => $invoice, 'token' => $trackingToken]);
+        $messageWithTokens = $this->replaceInvoiceEmailTokens(
+            $message,
+            $record,
+            $invoiceNo,
+            $totalLabel,
+            $due,
+            $brandName,
+            $publicUrl
+        );
+        $messageHtml = $this->formatInvoiceEmailBody($messageWithTokens);
+        $html = View::render('mail/invoice', [
+            'invoice' => $record,
+            'items' => $items,
+            'messageHtml' => $messageHtml,
+            'invoiceUrl' => route('invoices.show', ['invoice' => $invoice]),
+            'brandName' => $brandName,
+            'companyPhone' => $companyPhone,
+            'trackingUrl' => $trackingUrl,
+        ]);
+
+        $pdfContent = $this->renderInvoicePdfContent($record, $items);
+        $pdfName = $this->buildInvoicePdfName($record);
+
+        Mail::send(function ($mail) use ($record, $recipientEmail, $subject, $html, $bccMyself, $currentUserEmail, $pdfContent, $pdfName) {
+            $mail->to($recipientEmail, (string) ($record['customer_name'] ?? 'Customer'))
+                ->subject($subject)
+                ->html($html);
+
+            if ($bccMyself && $currentUserEmail !== '' && $currentUserEmail !== $recipientEmail) {
+                $mail->bcc($currentUserEmail);
+            }
+
+            $mail->attach($pdfName, $pdfContent, 'application/pdf');
+        });
+
+        $timestamp = date('Y-m-d H:i:s');
+        $this->logInvoiceEvent(
+            $invoice,
+            'email_sent',
+            'Reminder email sent',
+            $recipientEmail !== '' ? 'To: ' . $recipientEmail : null,
+            $trackingToken,
+            $timestamp
+        );
+
+        Session::set('invoice_reminder_status', 'Reminder email sent successfully.');
 
         return Response::redirect('/invoices/' . $invoice);
     }
@@ -1605,6 +1771,8 @@ class InvoicesController
      * @param array<string, mixed>|null $paymentTransaction
      * @param array<string, mixed> $emailOld
      * @param array<string, mixed> $emailErrors
+     * @param array<string, mixed> $reminderOld
+     * @param array<string, mixed> $reminderErrors
      * @param array<string, mixed> $paymentErrors
      * @param array<string, mixed> $paymentOld
      * @return array<string, mixed>
@@ -1616,6 +1784,8 @@ class InvoicesController
         ?array $paymentTransaction,
         array $emailOld,
         array $emailErrors,
+        array $reminderOld,
+        array $reminderErrors,
         array $paymentErrors,
         array $paymentOld
     ): array {
@@ -1648,6 +1818,21 @@ class InvoicesController
         $emailSubject = $emailOld['subject'] ?? $defaultSubject;
         $emailMessage = $emailOld['message'] ?? $defaultMessage;
         $autoOpenEmailModal = !empty($emailErrors);
+
+        $reminderDefaultSubject = 'Reminder: Unpaid Invoice ' . $invoiceNo . ' from ' . $brandName;
+        $reminderTemplate = (string) Setting::getValue('invoice_reminder_email_message');
+        $reminderDefaultMessage = $this->replaceInvoiceEmailTokens(
+            $reminderTemplate,
+            $invoice,
+            $invoiceNo,
+            $totalLabel,
+            $due,
+            $brandName,
+            $publicUrl
+        );
+        $reminderSubject = $reminderOld['subject'] ?? $reminderDefaultSubject;
+        $reminderMessage = $reminderOld['message'] ?? $reminderDefaultMessage;
+        $autoOpenReminderModal = !empty($reminderErrors);
         $autoOpenPaymentModal = !empty($paymentErrors);
 
         $hasPaymentTransaction = !empty($paymentTransaction);
@@ -1712,6 +1897,9 @@ class InvoicesController
             'emailSubject' => $emailSubject,
             'emailMessage' => $emailMessage,
             'autoOpenEmailModal' => $autoOpenEmailModal,
+            'reminderSubject' => $reminderSubject,
+            'reminderMessage' => $reminderMessage,
+            'autoOpenReminderModal' => $autoOpenReminderModal,
             'autoOpenPaymentModal' => $autoOpenPaymentModal,
             'hasPaymentTransaction' => $hasPaymentTransaction,
             'paymentTransactionAmount' => $paymentTransactionAmount,
