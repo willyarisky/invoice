@@ -1249,36 +1249,28 @@ class InvoicesController
             ->first();
 
         if ($sent !== null) {
-            $alreadyOpened = DBML::table('invoice_events')
-                ->where('invoice_id', $invoice)
-                ->where('type', 'email_opened')
-                ->where('token', $token)
-                ->exists();
+            $request = Request::instance();
+            if (! $this->shouldIgnoreEmailOpen($request)) {
+                $ip = $request->ip();
+                $agent = trim((string) $request->header('user-agent', ''));
+                $details = [];
 
-            if (! $alreadyOpened) {
-                $request = Request::instance();
-                if (! $this->shouldIgnoreEmailOpen($request)) {
-                    $ip = $request->ip();
-                    $agent = trim((string) $request->header('user-agent', ''));
-                    $details = [];
-
-                    if ($ip) {
-                        $details[] = 'IP: ' . $ip;
-                    }
-                    if ($agent !== '') {
-                        $details[] = 'Agent: ' . $agent;
-                    }
-
-                    $detail = $details !== [] ? implode(' | ', $details) : null;
-
-                    $this->logInvoiceEvent(
-                        $invoice,
-                        'email_opened',
-                        'Email opened',
-                        $detail,
-                        $token
-                    );
+                if ($ip) {
+                    $details[] = 'IP: ' . $ip;
                 }
+                if ($agent !== '') {
+                    $details[] = 'Agent: ' . $agent;
+                }
+
+                $detail = $details !== [] ? implode(' | ', $details) : null;
+
+                $this->logInvoiceEvent(
+                    $invoice,
+                    'email_opened',
+                    'Email opened',
+                    $detail,
+                    $token
+                );
             }
         }
 
