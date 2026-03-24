@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <title>Invoice {{ $invoice['invoice_no'] ?? '' }}</title>
 </head>
-<body style="margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; color: #1f2933;">
+<body style="margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; color: #000000ff;">
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background: #fff; padding: 24px 0;">
         <tr>
             <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background: #ffffff;padding: 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background: #ffffff;padding: 0px;">
                     <tr>
                         <td>
                             @if (!empty($messageHtml ?? ''))
-                                <div style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #1f2933;">
+                                <div style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #000000ff;">
                                     {!! $messageHtml !!}
                                 </div>
                             @endif
