@@ -145,6 +145,9 @@
                                     <a href="{{ route('transactions.edit', ['transaction' => $transaction['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
                                         Edit
                                     </a>
+                                    <a href="{{ route('transactions.duplicate', ['transaction' => $transaction['id']]) }}" class="flex items-center px-4 py-2 font-semibold text-stone-600 hover:bg-stone-50" onclick="event.stopPropagation();">
+                                        Duplicate
+                                    </a>
                                 </div>
                             </div>
                         </td>

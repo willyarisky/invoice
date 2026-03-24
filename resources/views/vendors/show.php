@@ -38,7 +38,20 @@
                     <p class="mt-1 text-xs text-stone-500">{{ $vendor['phone'] }}</p>
                 @endif
             </div>
-            @if (!empty($vendor['address'] ?? ''))
+            @php
+                $addressValue = trim((string) ($vendor['address'] ?? ''));
+                $addressLines = array_values(array_filter(
+                    preg_split('/\R/', $addressValue) ?: [],
+                    static fn (string $line): bool => trim($line) !== ''
+                ));
+                $singleLine = count($addressLines) === 1;
+                $addressLine = $addressLines[0] ?? '';
+                $wordCount = str_word_count($addressLine);
+                $hasDigits = preg_match('/\d/', $addressLine) === 1;
+                $hasComma = str_contains($addressLine, ',');
+                $showAddress = $addressValue !== '' && !($singleLine && ! $hasDigits && ! $hasComma && $wordCount <= 3);
+            @endphp
+            @if ($showAddress)
                 <div class="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-xs uppercase tracking-widest text-stone-400">Address</p>
                     <p class="mt-2 text-sm text-stone-700 whitespace-pre-line">{{ $vendor['address'] }}</p>
@@ -54,7 +67,39 @@
         </div>
 
         <div class="rounded-xl border border-stone-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
+            <div class="divide-y divide-stone-100 lg:hidden">
+                @foreach ($transactions as $transaction)
+                    <div class="px-4 py-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-stone-900">{{ $transaction['date'] ?? '' }}</span>
+                            <span class="inline-flex items-center rounded-xl px-3 py-1 text-[11px] font-semibold {{ $transaction['type_badge_class'] ?? '' }}">
+                                {{ $transaction['type_label'] ?? '' }}
+                            </span>
+                        </div>
+                        <div class="mt-2 text-sm text-stone-600">
+                            <p class="text-xs uppercase tracking-widest text-stone-400">Category</p>
+                            <p class="mt-1 text-sm text-stone-700">{{ $transaction['category_name'] ?? '—' }}</p>
+                            <p class="mt-3 text-xs uppercase tracking-widest text-stone-400">Reference</p>
+                            @if (!empty($transaction['reference_url']))
+                                <a href="{{ $transaction['reference_url'] }}" class="mt-1 inline-flex text-sm font-semibold text-stone-700 hover:text-stone-900">
+                                    {{ $transaction['reference_label'] ?? '' }}
+                                </a>
+                            @else
+                                <p class="mt-1 text-sm text-stone-600">{{ $transaction['reference_label'] ?? '' }}</p>
+                            @endif
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <span class="text-sm font-semibold {{ $transaction['amount_class'] ?? '' }}">{{ $transaction['amount_label'] ?? '' }}</span>
+                            <a href="{{ route('transactions.show', ['transaction' => $transaction['id']]) }}" class="text-xs font-semibold text-stone-600 hover:text-stone-900">
+                                View details
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="px-4 py-6 text-center text-sm text-stone-500">No transactions recorded for this vendor.</div>
+                @endforeach
+            </div>
+            <div class="hidden overflow-x-auto lg:block">
                 <table class="min-w-full divide-y divide-stone-100 text-sm text-stone-700">
                     <thead class="text-left text-xs font-semibold uppercase tracking-widest text-stone-500 rounded-t-xl">
                         <tr>

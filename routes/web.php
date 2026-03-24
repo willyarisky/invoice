@@ -41,6 +41,7 @@ Router::group(['middleware' => [AuthMiddleware::class]], function () {
     Router::post('/customers/{customer}/delete', [CustomersController::class, 'delete'])->name('customers.delete');
     Router::get('/transactions', [TransactionsController::class, 'index'])->name('transactions.index');
     Router::get('/transactions/create', [TransactionsController::class, 'create'])->name('transactions.create');
+    Router::get('/transactions/{transaction}/duplicate', [TransactionsController::class, 'duplicate'])->name('transactions.duplicate');
     Router::get('/transactions/{transaction}', [TransactionsController::class, 'show'])->name('transactions.show');
     Router::get('/transactions/{transaction}/edit', [TransactionsController::class, 'edit'])->name('transactions.edit');
     Router::post('/transactions', [TransactionsController::class, 'store'])->name('transactions.store');

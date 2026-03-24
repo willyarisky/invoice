@@ -282,6 +282,59 @@ class TransactionsController
         ]));
     }
 
+    public function duplicate(int $transaction): Response
+    {
+        $layout = ViewData::appLayout();
+
+        $record = DBML::table('transactions as t')
+            ->select(
+                't.id',
+                't.type',
+                't.amount',
+                't.currency',
+                't.date',
+                't.description',
+                't.vendor_id',
+                't.category_id'
+            )
+            ->where('t.id', $transaction)
+            ->first();
+
+        if ($record === null) {
+            Session::set('transaction_status', 'Transaction not found.');
+            return Response::redirect('/transactions');
+        }
+
+        $vendors = DBML::table('vendors')->select('id', 'name')->orderBy('name')->get();
+        $categories = DBML::table('categories')->select('id', 'name')->orderBy('name')->get();
+
+        $currentType = strtolower((string) ($record['type'] ?? 'expense'));
+        $currentCurrency = strtoupper((string) ($record['currency'] ?? Setting::getValue('default_currency')));
+        $currentDate = (string) ($record['date'] ?? date('Y-m-d'));
+        $currentVendor = (string) ($record['vendor_id'] ?? '');
+        $currentCategory = (string) ($record['category_id'] ?? '');
+        $currentAmount = number_format((float) ($record['amount'] ?? 0), 2, '.', '');
+        $currentDescription = (string) ($record['description'] ?? '');
+
+        return view('transactions/create', array_merge($layout, [
+            'vendors' => $vendors,
+            'categories' => $categories,
+            'errors' => [],
+            'currentType' => $currentType,
+            'currentCurrency' => $currentCurrency,
+            'currentDate' => $currentDate,
+            'currentVendor' => $currentVendor,
+            'currentCategory' => $currentCategory,
+            'currentAmount' => $currentAmount,
+            'currentDescription' => $currentDescription,
+            'currencyOptions' => Setting::currencyOptions(),
+            'typeOptions' => array_map(
+                static fn (string $type): array => ['value' => $type, 'label' => ucfirst($type)],
+                $this->allowedTypes
+            ),
+        ]));
+    }
+
     public function store(Request $request): Response
     {
         Session::remove('transaction_status');
